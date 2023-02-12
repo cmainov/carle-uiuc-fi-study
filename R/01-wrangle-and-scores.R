@@ -78,6 +78,31 @@ vars.1 <- names( d.2[ c( 56, 58:71, 223:226 )])
 d.2[ , vars.1 ]                          #this shows the above diet variables are present in the combined dataset
 
 
+## Create a flag variable for showing those missing at least one diet/food variable ##
+
+# this will allow us to keep track of new variables that are subsequently created #
+# and ensure quality control #
+
+d.2$flag_diet <- 0 # initialize flag variable
+
+for( i in 1:length( vars.1 ) ){
+  
+  d.2$flag_diet <- d.2$flag_diet + as.numeric( is.na( d.2[, vars.1[i] ] ) )
+  
+  d.2$flag_diet <- ifelse( d.2$flag_diet >= 1, 1, d.2$flag_diet ) # ensure it is "1" or "0"
+
+}
+
+# > table( d.2$flag_diet)
+# 
+# 0   1
+# 222  12
+# 12 with at least one diet variable missing
+
+
+
+## Now do unit conversions ##
+
 # levels 
 fr <- levels( as.factor( d.2$chip ) )
 
@@ -163,16 +188,13 @@ df.list[[i]]$`Food Group` <- ifelse( str_detect(df.list[[i]]$`Food Group`, "juic
 }
 
 
-# 
-# *adjust fruit/veg frequency of food intake by gender/age specific factors;      
-# * this generates results for 1/2 cup pyramid serving units (predfv7 predfv6);  
+
+
+### Adjustments ###
 
 
 #get column indices
 these.2 <- which( colnames( d.2 ) %in% vars.1 )
-
-# copy before adjustments 
-d.3 <- d.2
 
 # age list
 age.lst <- list( c( 0:17 ),
@@ -181,135 +203,145 @@ age.lst <- list( c( 0:17 ),
       c( 38:47 ),
       c( 48:57 ),
       c( 58:67 ),
-      c( 68:77 ) )
+      c( 68:77 ),
+      c( 78:99 ) )
 
-for( i in 1:nrow( d.3 ) ){
-  
-    ## 18-27
-    if( d.3[ i, "age" ] %in% 18:27 & d.3[ i, "pat_sex" ] == "Male" ){
-      
-      for( g in 3:9){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,2])
-      }
-      }
-    
-    
-    if( d.3[ i, "age" ] %in% 18:27 & d.3[ i, "pat_sex" ] == "Female" ){
-      
-      for( g in 11:17){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,2])
-      }
-      }
 
-  
-    
-    ## 28-37
-    if( d.3[ i, "age" ] %in% 28:37 & d.3[ i, "pat_sex" ] == "Male" ){
-      
-      for( g in 3:9){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,3])
-      }
-      }
+# copy before adjustments 
+d.3 <- d.2
 
-    
-    if( d.3[ i, "age" ] %in% 28:37 & d.3[ i, "pat_sex" ] == "Female" ){
-      
-      for( g in 11:17){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,3])
-      }
-      }
-  
-    
-    
-    ## 38-47
-    if( d.3[ i, "age" ] %in% 38:47 & d.3[ i, "pat_sex" ] == "Male" ){
-      
-      for( g in 3:9){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,4])
-      }
-      }
-  
-    
-    if( d.3[ i, "age" ] %in% 38:47 & d.3[ i, "pat_sex" ] == "Female" ){
-      
-      for( g in 11:17){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,4])
-      }
-      }
-    
-    
-    
-    ## 48-57
-    if( d.3[ i, "age" ] %in% 48:57 & d.3[ i, "pat_sex" ] == "Male" ){
-      
-      for( g in 3:9){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,5])
-      }
-      }
-    
-    
-    if( d.3[ i, "age" ] %in% 48:57 & d.3[ i, "pat_sex" ] == "Female" ){
-      
-      for( g in 11:17){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,5])
 
-      }
-    }
+## adjust fruit/veg frequency of food intake by gender/age specific factors ##
+
+# this generates results for 1/2 cup pyramid serving units (predfv7 predfv6) #
+
+# we will use the 4th HTML table in `df.list` (i.e., df.list[[4]])
+
+for( i in 1:nrow( d.3 ) ){  # loop on subject
+  
+  for( j in 2:length( age.lst) ){ # loop on age which determines which columns of reference table to use
     
+    ## inner loops will be determined based on which rows to use from the table
     
-    ## 58-67
-    if( d.3[ i, "age" ] %in% 58:67 & d.3[ i, "pat_sex" ] == "Male" ){
-      
-      for( g in 3:9 ){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,6])
-      }
-    }
-    
-    if( d.3[ i, "age" ] %in% 58:67  & d.3[ i, "pat_sex" ] == "Female" ){
-      
-      for( g in 11:17){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,6])
-      }
-      }
-    
-    
-    
-    ## 68-77
-    if( d.3[ i, "age" ] %in% 68:77 & d.3[ i, "pat_sex" ] == "Male" ){
+    # males inner loop
+    if( d.3[ i, "age" ] %in% age.lst[[j]] & d.3[ i, "pat_sex" ] == "Male" ){
       
       for( g in 3:9){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,7])
-      }
-      }
-    
-    
-    if( d.3[ i, "age" ] %in% 58:67 & d.3[ i, "pat_sex" ] == "Female" ){
-      
-      for( g in 11:17){
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
-          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,7])
-      }
+        d.3[ i, paste0( df.list[[4]]$`Food Group`[g],"_m" ) ] <-
+          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,j])
       }
     }
   
-## Compute FV Scores ##
+  # females inner loop
+  if( d.3[ i, "age" ] %in% age.lst[[j]] & d.3[ i, "pat_sex" ] == "Female" ){
+    
+    for( g in 11:17){
+      d.3[ i, paste0( df.list[[4]]$`Food Group`[g],"_m" ) ] <-
+        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,j])
+    }
+  }
+  }
+}
+  
+
+## Compute pyramid serving units variables ##
+
  d.4 <- d.3 %>%
-   mutate( fv7 = fruit + vegetables + juice + potatoes + white_potatoes + salad + beans,
-           fv6 = fruit + vegetables + juice + white_potatoes + salad + beans, # remove fried potatoes
+   mutate( fv7 = fruit_m + vegetables_m + juice_m + potatoes_m + white_potatoes_m + salad_m + beans_m,
+           fv6 = fruit_m + vegetables_m + juice_m + white_potatoes_m + salad_m + beans_m, # remove fried potatoes
            sqfv7 = sqrt( fv7 ),
            sqfv6 = sqrt( fv6 ) ) 
  
+
+
+## Adjust food frequency by gender/age specific factors ##
  
- ### *adjust food frequency by gender/age specific factors ###
+# this will generate
  
+# it will use tables 2 (for males) and 3 (for females) to make the conversions
+ 
+ d.5 <- d.4 # copy before looping and alterating
+ for( i in 1:nrow( d.5 ) ){  # loop on subject
+   
+   for( j in 2:length( age.lst) ){ # loop on age which determines which columns of reference table to use
+     
+     ## inner loops will be determined based on which rows to use from the table
+     
+     # males inner loop
+     if( d.5[ i, "age" ] %in% age.lst[[j]] & d.5[ i, "pat_sex" ] == "Male" ){
+       
+       for( g in 3:20){ # loop on all food items this time
+         d.5[ i, paste0( df.list[[2]]$`Food Group`[g],"_a" ) ] <-
+           d.5[ i, which(colnames( d.5 ) == df.list[[2]]$`Food Group`[g]) ]*as.numeric(df.list[[2]][g,j])
+       }
+     }
+     
+     # females inner loop
+     if( d.5[ i, "age" ] %in% age.lst[[j]] & d.5[ i, "pat_sex" ] == "Female" ){
+       
+       for( g in 3:20){
+         d.5[ i, paste0( df.list[[3]]$`Food Group`[g],"_a" ) ] <-
+           d.5[ i, which(colnames( d.5 ) == df.list[[3]]$`Food Group`[g]) ]*as.numeric(df.list[[3]][g,j])
+       }
+     }
+   }
+ }
+ 
+ 
+## create predicted outcomes ##
+ 
+ d.5 <- d.5 %>%
+   mutate( predfv7ps = ifelse( pat_sex == "Male", 0.90679 + 0.75856*sqfv7,
+                               ifelse( pat_sex == "Female", 0.81956 + 0.73086*sqfv7, NA ) ),
+           predfv6ps = ifelse( pat_sex == "Male", 0.94077 + 0.73906*sqfv6,
+                               ifelse( pat_sex == "Female", 0.81626 + 0.73022*sqfv6, NA ) ) )
+ 
+ 
+## use table  6 from `df.list` to create predicted fiber intake and % from fat
+ 
+ d.6 <- d.5 %>% # copy data before looping and alternating
+   
+   # initialize variables with intercept values
+   mutate( pred.fiber = ifelse( pat_sex == "Male", as.numeric( df.list[[6]][2,3] ),
+                                ifelse( pat_sex == "Female", as.numeric( df.list[[6]][2,5] ), NA ) ),
+           pred.pcf = ifelse( pat_sex == "Male", as.numeric( df.list[[6]][2,2] ),
+                              ifelse( pat_sex == "Female", as.numeric( df.list[[6]][2,4] ), NA ) ) )
+
+ for( i in 1:nrow( d.6 ) ){  # loop on subject
+
+     
+
+       for( g in 3:20){ # loop on all food items this time
+         
+         ## males
+         if( d.6[ i, "pat_sex" ] == "Male" ){
+           
+           # predicted fiber
+         d.6[ i, "pred.fiber" ] <-
+           d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
+           as.numeric(df.list[[6]][g,3]) + d.6[ i, "pred.fiber" ]
+         
+         # predicted % from fat
+         d.6[ i, "pred.pcf" ] <-
+           d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
+           as.numeric(df.list[[6]][g,2]) + d.6[ i, "pred.pcf" ]
+         }
+         
+         ## females
+         if( d.6[ i, "pat_sex" ] == "Female" ){
+           
+           # predicted fiber
+           d.6[ i, "pred.fiber" ] <-
+             d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
+             as.numeric(df.list[[6]][g,5]) + d.6[ i, "pred.fiber" ]
+           
+           # predicted % from fat
+           d.6[ i, "pred.pcf" ] <-
+             d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
+             as.numeric(df.list[[6]][g,4]) + d.6[ i, "pred.pcf" ]
+         }
+       }
+ }
+ 
+ 
+    
