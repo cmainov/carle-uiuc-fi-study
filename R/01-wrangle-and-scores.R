@@ -11,7 +11,8 @@
 #
 # INPUT DATA FILES: 
 # i. "../01-data-raw/raw_data.csv"
-# ii. HTML tables scraped from link in `Resources` below this
+# ii. HTML tables scraped from link in `Resources` below this (these will be stored
+# in a list names `df.list` and will be accessed regularly throughout the script)
 #
 #
 # OUTPUT DATA FILE: "../02-data-wrangled/01-diet-scores.rds"
