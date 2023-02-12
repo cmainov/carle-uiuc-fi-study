@@ -1,28 +1,59 @@
+##------------------------------------------------------------
+###   01-DATA-WRANGLING AND DIET SCORES
+###------------------------------------------------------------
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+# 
+# In this script, we will import The raw data, fix the income variable and then
+# compute the diet scores from the variables in the Multifactor Screener in OPEN survey 
+# (see resources below). We will scrape the HTML tables from their website, containing
+# the adjustment multipliers and use them for the score formulations.
+#
+# INPUT DATA FILES: 
+# i. "../01-data-raw/raw_data.csv"
+# ii. HTML tables scraped from link in `Resources` below this
+#
+#
+# OUTPUT DATA FILE: "../02-data-wrangled/01-diet-scores.rds"
+#
+# **A Special Note**: The data is not being hosted on this GitHub repository given privacy concerns
+# Relative paths are used for obtaining the data from a local folder on my machine.
+#
+#
+# Resources (Accessed 12 February 2023): 
+# i. https://epi.grants.cancer.gov/past-initiatives/open/multifactor/scoring.html
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 library( tidyverse )
 library( rvest )      # for webscraping html tables
 
 source( "R/utils.R")
 
-### Read-in Raw Data ###
+### (0.0) Read-in Raw Data ###
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 d.raw <- read.csv( "../01-data-raw/raw_data.csv")
 
-View(d.raw)
+# Again, note data are not hosted publicly on the repository. They are stored on my
+# local machine.
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
 
-### Some Data Wrangling ###
+### (1.0) Some Data Wrangling ###
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-## Change all " '' " to NAs
+## (1.1) Change all " '' " to NAs
 
 d.raw[ d.raw == "" ] <- NA
 
-## Fix Income Variable (i.e., recode old survey version levels to levels on new survey) ##
+  ## --------- End Subsection --------- ##
+
+
+## (1.2) Fix Income Variable (i.e., recode old survey version levels to levels on new survey) ##
 
 table( d.raw$pat_income)
 table( d.raw$pat_income_new)
@@ -55,11 +86,11 @@ table( d.1$pat_income_new ) # check
 
 
 
-### Unit Conversions ( Raw Input to servings/day ) ###
+### (2.0) Unit Conversions ( Raw Input to servings/day ) ###
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-# first change milk variable to four separate milk variables (skim, 1%, and 2%)
+## (2.1) First change milk variable to four separate milk variables (skim, 1%, and 2%) ##
 
 d.2 <- d.1 %>% # for those that have a milk entry that is not missing, they will get "0" for all other milk types not the ones that they consume
   ## note: there are some individuals with missing `milk_used` that have an entry in `milk`
@@ -72,13 +103,19 @@ d.2 <- d.1 %>% # for those that have a milk entry that is not missing, they will
           milk_whole = ifelse( milk_used == "Whole Milk", milk, "Never"  ) ) %>%
   select( -milk )
 
-## First Conversion
+## --------- End Subsection --------- ##
+
+
+## (2.2) Variables to convert units for
+
 vars.1 <- names( d.2[ c( 56, 58:71, 223:226 )])
   
 d.2[ , vars.1 ]                          #this shows the above diet variables are present in the combined dataset
 
+## --------- End Subsection --------- ##
 
-## Create a flag variable for showing those missing at least one diet/food variable ##
+
+## (2.3) Create a flag variable for showing those missing at least one diet/food variable ##
 
 # this will allow us to keep track of new variables that are subsequently created #
 # and ensure quality control #
@@ -93,15 +130,12 @@ for( i in 1:length( vars.1 ) ){
 
 }
 
-# > table( d.2$flag_diet)
-# 
-# 0   1
-# 222  12
 # 12 with at least one diet variable missing
 
+## --------- End Subsection --------- ##
 
 
-## Now do unit conversions ##
+## (2.4) Now do unit conversions ##
 
 # levels 
 fr <- levels( as.factor( d.2$chip ) )
@@ -126,20 +160,26 @@ for ( i in these.1 ){
 # check and ensure fidelity
 d.2[ , these.1 ]
 
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-## Portion Size Adjustments ##
-### (0.0) Web Scrape for HTML Tables ###
+
+
+### (3.0) Web Scrape for HTML Tables Containing Adjustment factors ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
 url <-  "https://epi.grants.cancer.gov/past-initiatives/open/multifactor/scoring.html#scoring"
 
-# web scrape the link above for the HTML tables that have all the conversion factors
+## (3.1) Web scrape the link above for the HTML tables that have all the conversion factors ##
 df.list <- url %>% 
   read_html() %>% 
   html_nodes("table") %>% 
   html_table( fill = T ) 
 
-## Fat and Fiber Analysis ##
+## --------- End Subsection --------- ##
 
+
+## (3.2) Convert food group names to those present in working dataset ##
 for( i in 2:length(df.list)){
   if( i %in% 2:5){
 df.list[[i]]$`Food Group` <- ifelse( str_detect(df.list[[i]]$`Food Group`, "juice"), "juice", 
@@ -187,13 +227,17 @@ df.list[[i]]$`Food Group` <- ifelse( str_detect(df.list[[i]]$`Food Group`, "juic
   }
 }
 
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
-### Adjustments ###
+
+### (4.0) Adjustment of Food Items by Age/Gender Factors ###
+## Creates 1/2 cup pyramid serving units (predfv7 predfv6) ##
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-#get column indices
+## (4.1) Get column indices ##
 these.2 <- which( colnames( d.2 ) %in% vars.1 )
 
 # age list
@@ -210,8 +254,10 @@ age.lst <- list( c( 0:17 ),
 # copy before adjustments 
 d.3 <- d.2
 
+## --------- End Subsection --------- ##
 
-## adjust fruit/veg frequency of food intake by gender/age specific factors ##
+
+## (4.2) Adjust fruit/veg frequency of food intake by gender/age specific factors ##
 
 # this generates results for 1/2 cup pyramid serving units (predfv7 predfv6) #
 
@@ -244,22 +290,34 @@ for( i in 1:nrow( d.3 ) ){  # loop on subject
 }
   # end loop
 
+## --------- End Subsection --------- ##
 
-## Compute pyramid serving units variables ##
+
+## (4.3) Compute 1/2 cup pyramid serving units variables ##
 
  d.4 <- d.3 %>%
    mutate( fv7 = fruit_m + vegetables_m + juice_m + potatoes_m + white_potatoes_m + salad_m + beans_m,
            fv6 = fruit_m + vegetables_m + juice_m + white_potatoes_m + salad_m + beans_m, # remove fried potatoes
            sqfv7 = sqrt( fv7 ),
-           sqfv6 = sqrt( fv6 ) ) 
+           sqfv6 = sqrt( fv6 ),
+           ## create predicted outcomes ##
+           predfv7ps = ifelse( pat_sex == "Male", 0.90679 + 0.75856*sqfv7,
+                               ifelse( pat_sex == "Female", 0.81956 + 0.73086*sqfv7, NA ) ),
+           predfv6ps = ifelse( pat_sex == "Male", 0.94077 + 0.73906*sqfv6,
+                               ifelse( pat_sex == "Female", 0.81626 + 0.73022*sqfv6, NA ) ) )
+ 
+ 
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
  
 
-
-## Adjust food frequency by gender/age specific factors ##
  
-# this will generate
  
-# it will use tables 2 (for males) and 3 (for females) to make the conversions
+### (5.0) Compute `pred.fiber` and `pred.pcf` (Age and Sex-Specific) ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ 
+## (5.1) Age-sex adjustment
+ 
+# it will use tables 2 (for males) and 3 (for females) to make the conversions from `df.list`
  
  d.5 <- d.4 # copy before looping and alterating
  for( i in 1:nrow( d.5 ) ){  # loop on subject
@@ -288,17 +346,10 @@ for( i in 1:nrow( d.3 ) ){  # loop on subject
    }
  }
  
- 
-## create predicted outcomes ##
- 
- d.5 <- d.5 %>%
-   mutate( predfv7ps = ifelse( pat_sex == "Male", 0.90679 + 0.75856*sqfv7,
-                               ifelse( pat_sex == "Female", 0.81956 + 0.73086*sqfv7, NA ) ),
-           predfv6ps = ifelse( pat_sex == "Male", 0.94077 + 0.73906*sqfv6,
-                               ifelse( pat_sex == "Female", 0.81626 + 0.73022*sqfv6, NA ) ) )
+ ## --------- End Subsection --------- ##
  
  
-## use table  6 from `df.list` to create predicted fiber intake and % from fat ##
+## (5.2) Use table  6 from `df.list` to create predicted fiber intake and % from fat ##
  
  d.6 <- d.5 %>% # copy data before looping and alternating
    
@@ -344,12 +395,16 @@ for( i in 1:nrow( d.3 ) ){  # loop on subject
        }
  }
  
+ # ---------------------------------------------------------------------------------------------------------------------------------------------------------
  
  
-### Adjust fruit/veg frequency of food intake by gender/age specific factors ###
- ##this generates results for cup equivalent MyPyramid units (FVCE FVCENOFF) ##
  
-# create age category variable
+ 
+### (6.0) Adjustment of Food Items by Age/Gender Factors ###
+ ## Creates cup-equivalent pyramid serving units (`raw.pred.fv7.ce`, `raw.pred.fv6.ce`, `pred.fv7.ce`, `pred.fv6.ce`) ##
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ 
+## (6.1) Create age category variable
 for ( i in 1:nrow( d.6 ) ){
   
   for ( j in 2:length( age.lst ) ){
@@ -363,8 +418,10 @@ for ( i in 1:nrow( d.6 ) ){
   }
 }
  
+ ## --------- End Subsection --------- ##
+ 
 
-## Input F/V cup equivalent adjustments, from fran.predict.nhis.fortim.cupeq.txt provided by Lisa Kahle 06/15/2007;
+## (6.2) Input F/V cup equivalent adjustments, from fran.predict.nhis.fortim.cupeq.txt provided by Lisa Kahle 06/15/2007 ##
 
 fvcupadj <- tibble::tribble(
      ~"gender", ~"AgeGrp", ~"FVCAFruit", ~"FVCAFrtJ", ~"FVCAFrFry", ~"FVCAOthPot", ~"FVCASalad", ~"FVCAOthVeg", ~"FVCADrBean",
@@ -386,6 +443,8 @@ fvcupadj <- tibble::tribble(
   mutate( gender = ifelse( gender == 1, "Male",
                            ifelse( gender == 2, "Female", NA ) ) )
 
+
+## (6.3) Merge and create variables ## 
 
 # merge portion size adjustment variables to working dataset and multiply to 
 # estimate cup equivalents of F & V (`raw.pred.fv7.ce`, `raw.pred.fv6.ce`) and 
@@ -416,17 +475,37 @@ d.7 <- d.6 %>%
                                         ( 0.616033 + 0.727761*( sqrt(raw.pred.fv6.ce) ) )^2,NA ) ) )
 
 
-# final dataset to return
-cols.keep <- c( which( colnames( d.7 ) %in% colnames( d.2 ) ), # original data columns
-                       which( colnames( d.7 ) %in% c( "pred.fiber", "pred.pcf",
-                                                      "pred.fv7.ce", "pred.fv6.ce",
-                                                      "raw.pred.fv7.ce", "raw.pred.fv6.ce",
-                                                      "predfv7ps", "predfv6ps") )
-)
-                       
-d.final <- d.7[, cols.keep ]
 
-## column descriptions ##
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+### (7.0) Return Final Dataset and Save ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## (7.1) Columns to return in final dataset ##
+cols.keep <- c( which( colnames( d.7 ) %in% colnames( d.2 ) ), # original data columns
+                which( colnames( d.7 ) %in% c( "pred.fiber", "pred.pcf",
+                                               "pred.fv7.ce", "pred.fv6.ce",
+                                               "raw.pred.fv7.ce", "raw.pred.fv6.ce",
+                                               "predfv7ps", "predfv6ps") )
+)
+
+## --------- End Subsection --------- ##
+
+
+## (7.2) Save ##
+d.final <- d.7[, cols.keep ] %>%
+  saveRDS( "../02-data-wrangled/01-diet-scores.rds" )
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+### Column Descriptions ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
 # pred.fiber = predicted fiber intake (g)
 # pred.pcf = predicted percentage of calories from fat (%)
 # pred.fv7.ce = predicted F & V cup equivalent MyPyramid units, including french fries, adjusted for age and gender
@@ -435,3 +514,6 @@ d.final <- d.7[, cols.keep ]
 # raw.pred.fv6.ce = predicted F & V cup equivalent MyPyramid units, excluding french fries, not adjusted for age and gender
 # predfv7ps = predicted F & V 1/2 cup pyramid serving units, including french fries,
 # predfv6ps = predicted F & V 1/2 cup pyramid serving units, excluding french fries,
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
