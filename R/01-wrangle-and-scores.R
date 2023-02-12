@@ -62,7 +62,11 @@ table( d.1$pat_income_new ) # check
 # first change milk variable to four separate milk variables (skim, 1%, and 2%)
 
 d.2 <- d.1 %>% # for those that have a milk entry that is not missing, they will get "0" for all other milk types not the ones that they consume
-  mutate( milk_skim = ifelse( milk_used == "Non-Fat or Skim", milk, "Never" ),
+  ## note: there are some individuals with missing `milk_used` that have an entry in `milk`
+  mutate( milk_used = ifelse( is.na( milk_used ) & !is.na( milk ), "1% Fat", milk_used ),
+          
+          # now create the milk-specific columns (4 columns total)
+          milk_skim = ifelse( milk_used == "Non-Fat or Skim", milk, "Never" ),
           milk_1p = ifelse( milk_used == "1% Fat", milk, "Never"  ),
           milk_2p = ifelse( milk_used == "2% Fat", milk, "Never"  ),
           milk_whole = ifelse( milk_used == "Whole Milk", milk, "Never"  ) ) %>%
@@ -119,7 +123,7 @@ df.list[[i]]$`Food Group` <- ifelse( str_detect(df.list[[i]]$`Food Group`, "juic
                                                    ifelse( str_detect(df.list[[i]]$`Food Group`, "dogs"), "hot_dogs", 
                                                            ifelse( str_detect(df.list[[i]]$`Food Group`, "Fruit"), "fruit", 
                                                                    ifelse( str_detect(df.list[[i]]$`Food Group`, "dressing"), "regular_fat",
-                                                                           ifelse( str_detect(df.list[[i]]$`Food Group`, "Salad (P3)"), "salad",
+                                                                           ifelse( str_detect(df.list[[i]]$`Food Group`, "Salad \\("), "salad",
                                                                                    ifelse( str_detect(df.list[[i]]$`Food Group`, "bread"), "bread", 
                                                                                            ifelse( str_detect(df.list[[i]]$`Food Group`, "Fried"), "potatoes",
                                                                                                    ifelse( str_detect(df.list[[i]]$`Food Group`, "white pot"), "white_potatoes",
@@ -165,15 +169,22 @@ df.list[[i]]$`Food Group` <- ifelse( str_detect(df.list[[i]]$`Food Group`, "juic
 
 
 #get column indices
-these.2 <- which( colnames( d.2 )%in% vars.1 )
+these.2 <- which( colnames( d.2 ) %in% vars.1 )
 
 # copy before adjustments 
 d.3 <- d.2
 
+# age list
+age.lst <- list( c( 0:17 ),
+      c( 18:27 ),
+      c( 28:37 ),
+      c( 38:47 ),
+      c( 48:57 ),
+      c( 58:67 ),
+      c( 68:77 ) )
+
 for( i in 1:nrow( d.3 ) ){
   
-  for( j in these.2 ){
-    
     ## 18-27
     if( d.3[ i, "age" ] %in% 18:27 & d.3[ i, "pat_sex" ] == "Male" ){
       
@@ -257,7 +268,7 @@ for( i in 1:nrow( d.3 ) ){
     ## 58-67
     if( d.3[ i, "age" ] %in% 58:67 & d.3[ i, "pat_sex" ] == "Male" ){
       
-      for( g in 3:9){
+      for( g in 3:9 ){
         d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ] <-
           d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,6])
       }
@@ -291,5 +302,14 @@ for( i in 1:nrow( d.3 ) ){
       }
       }
     }
-  }
-View(d.2[,vars.1])
+  
+## Compute FV Scores ##
+ d.4 <- d.3 %>%
+   mutate( fv7 = fruit + vegetables + juice + potatoes + white_potatoes + salad + beans,
+           fv6 = fruit + vegetables + juice + white_potatoes + salad + beans, # remove fried potatoes
+           sqfv7 = sqrt( fv7 ),
+           sqfv6 = sqrt( fv6 ) ) 
+ 
+ 
+ ### *adjust food frequency by gender/age specific factors ###
+ 
