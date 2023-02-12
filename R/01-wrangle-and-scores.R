@@ -5,9 +5,12 @@
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 # 
 # In this script, we will import The raw data, fix the income variable and then
-# compute the diet scores from the variables in the Multifactor Screener in OPEN survey 
+# compute the diet scores from the variables in the NCI Multifactor Screener  
 # (see resources below). We will scrape the HTML tables from their website, containing
 # the adjustment multipliers and use them for the score formulations.
+#
+# Additionally, we will compute the FACT-G subscales and total scale (See documentation link below),
+# recode food insecurity variables/status, and compute the CHAOS score (See documentation link below).
 #
 # INPUT DATA FILES: 
 # i. "../01-data-raw/raw_data.csv"
@@ -22,7 +25,10 @@
 #
 #
 # Resources (Accessed 12 February 2023): 
-# i. https://epi.grants.cancer.gov/past-initiatives/open/multifactor/scoring.html
+# i. NCI Multifactor Screener info and tables: https://epi.grants.cancer.gov/past-initiatives/open/multifactor/scoring.html
+# ii. FACT-G info and documentation: https://www.facit.org/measures/FACT-G 
+# iii. USDA 6-item FI screener info and documentation: https://www.ers.usda.gov/media/8282/short2012.pdf 
+# iv. CHAOS scale paper: https://doi.org/10.1016/0193-3973(95)90028-4
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -497,17 +503,12 @@ cols.keep <- c( which( colnames( d.7 ) %in% colnames( d.2 ) ), # original data c
 
 
 ## (7.2) Save ##
-( d.8 <- d.7[, cols.keep ] ) %>%
-  saveRDS( "../02-data-wrangled/01-diet-scores.rds" )
+( d.8 <- d.7[, cols.keep ] ) 
 
-# ---------------------------------------------------------------------------------------------------------------------------------------------------------
-
+## --------- End Subsection --------- ##
 
 
-
-
-### Column Descriptions ###
-# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+## (7.3 New column descriptions ##
 
 # pred.fiber = predicted predicted percentage of energy from fiber (%)
 # pred.pcf = predicted percentage of calories from fat (%)
@@ -644,6 +645,158 @@ d.11 <- d.10 %>%
             sleeping_well + fun + content_qol )*7 ) / answers.fwb,
           
           factg_total = factg_ewb + factg_swb + factg_pwb + factg_fwb )
+
+## (8.6) New column descriptions ##
+
+# factg_pwb = FACT-G physical well-being subscale score
+# factg_ewb = FACT-G emotional well-being subscale score
+# factg_swb = FACT-G social well-being subscale score
+# factg_fwb = FACT-G functional well-being subscale score
+# factg_total = FACT-G total scale score
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+### (9.0) Food Insecurity Categorization ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## (9.1) Find column indicators for variables from FI screener ##
+these.fs <- which( str_detect( colnames( d.11 ), "hfss" ) )
+
+## --------- End Subsection --------- ##
+
+
+## (9.2) Convert those columns to binary and numeric affirmative/non-affirmative ##
+
+# subset the array of interest
+fs.sub <- d.11[ these.fs ]
+
+# code the responses to binary
+fs.sub[ fs.sub=="Sometimes true" ] <- 1 # "1" for affirmative
+fs.sub[ fs.sub=="Often true" ] <- 1 # "1" for affirmative
+fs.sub[ fs.sub=="Never true" ] <- 0 # "0" for not in the affirmative
+fs.sub[ fs.sub=="Yes" ] <- 1 # "1" for affirmative
+fs.sub[ fs.sub=="No" ] <- 0 # "0" for not in the affirmative
+fs.sub[ "hfss_4" ] <- ifelse( !is.na( fs.sub[ "hfss_4" ] ), 1, 0) # if they have an entry here they get a 1 otherwise a 0
+
+# copy the working dataset
+d.12 <- d.11
+
+# replace array in dataset with recoded array
+d.12[ these.fs ] <- fs.sub
+
+## --------- End Subsection --------- ##
+
+
+## (9.3) Compute food insecurity scale ##
+
+# convert food insecurity columns to numeric before computations of scales
+for( i in these.fs ){
+  
+  d.12[, i ] <- as.numeric( d.12[, i ] )
+  
+}
+
+# compute food insecurity variables
+d.13 <- d.12 %>%
+  mutate( fi_scale = hfss_1 + hfss_2 + hfss_3 + hfss_4 + hfss_5 +
+            hfss_6,
+          fi_status = as.factor( ifelse( fi_scale == 0, "High FI",
+                              ifelse( fi_scale == 1, "Marginal FI",
+                                      ifelse( fi_scale %in% 2:4, "Low FI",
+                                              ifelse( fi_scale %in% 5:6, "Very low FI", 
+                                                      NA) ) ) ) ),
+          fi_binary = as.factor( ifelse( fi_scale %in% 0:1, "High FI",
+                                         ifelse( fi_scale %in% 2:6, "Low FI", NA ) ) ) ) 
+
+## --------- End Subsection --------- ##
+
+
+## (9.4) New column descriptions ##
+
+# fi_scale = raw score from FS screener tool
+# fi_status = 4-level food insecurity factor variable coded into high food insecurity, marginal FI, low FI, and very low FI
+# fi_binary = 2-level food insecurity factor variable coded into high FI and low FI
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+### (10.0) CHAOS Score ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## NOTE: The Confusion, Hubbub, and ORder Scale (CHAOS) is derived by a simple sum of the 15 T/F items 
+## see: Matheny et al. (1995)--linked in the resources of the preamble of this R script
+
+
+## (10.1) Column indicators of variables needed for scale ##
+
+these.chaos <- which( colnames( d.13 ) %in% c( "commotion", "find_things", 
+                                             "rushed", "stay_on_top",
+                                             "running_late", "zoo", "talk_with", 
+                                             "fuss", "does_not_work", "think", 
+                                             "arguments", "relax", "telephone", 
+                                             "calm", "routine" ) )
+
+## --------- End Subsection --------- ##
+
+
+## (10.2) Convert those columns to numerical values based on documentation ##
+
+# subset the array of interest
+ch.sub <- d.13[ these.chaos ]
+
+# recode the responses
+ch.sub[ ch.sub=="Very much like your own home"] <- 1
+ch.sub[ ch.sub=="Somewhat like your own home"] <- 2
+ch.sub[ ch.sub=="A little like your own home"] <- 3
+ch.sub[ ch.sub=="Not at all like your own home"] <- 4
+
+# copy working dataset
+d.14 <- d.13
+
+# replace array in dataset with recoded array
+d.14[ these.chaos ] <- ch.sub
+
+## --------- End Subsection --------- ##
+
+
+## (10.3) Compute CHAOS score as simple sum  ##
+
+# convert item columns to numeric before computing final score
+for( i in these.chaos ){
+  
+  d.14[, i ] <- as.numeric( d.14[, i ] )
+  
+}
+
+# compute final score
+d.15 <- d.14 %>%
+  mutate( chaos_score = commotion + find_things + rushed +
+            stay_on_top + running_late + zoo + talk_with + fuss +
+            does_not_work + think + arguments + relax + telephone +
+            calm + routine )
+
+## --------- End Subsection --------- ##
+
+
+## (10.4) New column descriptions ##
+
+# chaos_score = CHAOS scale score
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+### (11.0) Save ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+saveRDS( d.15, "../02-data-wrangled/01-data-scores.rds" )
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
