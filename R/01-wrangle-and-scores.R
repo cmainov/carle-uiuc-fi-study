@@ -497,17 +497,19 @@ cols.keep <- c( which( colnames( d.7 ) %in% colnames( d.2 ) ), # original data c
 
 
 ## (7.2) Save ##
-d.final <- d.7[, cols.keep ] %>%
+( d.8 <- d.7[, cols.keep ] ) %>%
   saveRDS( "../02-data-wrangled/01-diet-scores.rds" )
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
+
+
 ### Column Descriptions ###
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# pred.fiber = predicted fiber intake (g)
+# pred.fiber = predicted predicted percentage of energy from fiber (%)
 # pred.pcf = predicted percentage of calories from fat (%)
 # pred.fv7.ce = predicted F & V cup equivalent MyPyramid units, including french fries, adjusted for age and gender
 # pred.fv6.ce = predicted F & V cup equivalent MyPyramid units, excluding french fries, adjusted for age and gender
@@ -515,6 +517,133 @@ d.final <- d.7[, cols.keep ] %>%
 # raw.pred.fv6.ce = predicted F & V cup equivalent MyPyramid units, excluding french fries, not adjusted for age and gender
 # predfv7ps = predicted F & V 1/2 cup pyramid serving units, including french fries,
 # predfv6ps = predicted F & V 1/2 cup pyramid serving units, excluding french fries,
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+### (8.0) FACT-G Scoring ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+## (8.1) Subset column/survey item names based on FACT-G Domain ##
+
+fg.swb <- c( "friends", "family", "friends_support", "fami_accept",
+             "satisfied_comm", "clost_to_partner", "sex_life" )
+
+fg.ewb <- c( "sad", "satisfied_coping", "losing_hope", "nervous", "worry_dying",
+             "worry_get_worse" )
+
+fg.fwb <- c( "work", "work_fulfilling", "enjoy_life", "accepted_illness", "sleeping_well",
+             "fun", "content_qol" )
+
+fg.pwb <- c( "energy", "nausea", "family_needs", "pain", "side_effects",
+             "ill", "bed" )
+
+## --------- End Subsection --------- ##
+
+
+## (8.2) Set to 0 those that chose not to respond to sexual activity item ##
+
+d.9 <- d.8 %>%
+  mutate( sex_life = ifelse( ( sex_life == "Prefer not to answer" |
+                                 !is.na( sex_activity_answer) ), 0, sex_life ))
+
+sum(is.na( d.9$sex_life)) # check how many missing; 97 subjects
+
+## --------- End Subsection --------- ##
+
+
+## (8.3) Convert character scores to numeric ##
+
+# subset the FACT-G questionnaire columns only
+fg.sub <- d.9[, c( fg.swb,
+         fg.ewb,
+         fg.fwb,
+         fg.pwb ) ]
+
+# assign numerical values based on level
+fg.sub[ fg.sub=="Not at all" ] <- 0
+fg.sub[ fg.sub=="A little bit" ] <- 1
+fg.sub[ fg.sub=="Somewhat" ] <- 2
+fg.sub[ fg.sub=="Quite a bit" ] <- 3
+fg.sub[ fg.sub=="Very much" ] <- 4
+
+# reassign those columns back to the dataset
+
+d.9[, c( fg.swb,
+         fg.ewb,
+         fg.fwb,
+         fg.pwb ) ] <- fg.sub
+
+## --------- End Subsection --------- ##
+
+
+## (8.4) Reverse coding items that need to be reverse coded ##
+
+# columns that need reveral
+rvs.items <- c( fg.pwb, 
+                fg.ewb[ !fg.ewb == 'satisfied_coping' ] )
+
+# subset array to perform reversal on
+fg.rvs.it <- d.9[ , rvs.items ]
+
+# apply reversal function
+fg.rvs.it.2 <- sapply( fg.rvs.it, function(x) abs( as.numeric( x ) - 4) )
+
+d.10 <- d.9 # copy dataset
+
+# replace unreserved values with reversed
+d.10[ , rvs.items ] <- fg.rvs.it.2
+
+## --------- End Subsection --------- ##
+
+
+## (8.6) No. of answered items in each survey for each participant ##
+
+for ( i in 1:nrow( d.10 ) ){
+  
+  d.10[ i, "answers.pwb" ] <- length( fg.pwb) - sum( is.na( unlist( d.10[ i, fg.pwb ] ) ) )
+  d.10[ i, "answers.fwb" ] <- length( fg.fwb) - sum( is.na( unlist( d.10[ i, fg.fwb ] ) ) )
+  d.10[ i, "answers.swb" ] <- length( fg.swb) - sum( is.na( unlist( d.10[ i, fg.swb ] ) ) )
+  d.10[ i, "answers.ewb" ] <- length( fg.ewb) - sum( is.na( unlist( d.10[ i, fg.ewb ] ) ) )
+  
+  
+}
+
+## --------- End Subsection --------- ##
+
+
+## (8.5) Compute subscales and final score ##
+
+# convert all FACT-G columns to numeric prior to final computations
+these <- which( colnames( d.10 ) %in% c( fg.swb,
+                              fg.ewb,
+                              fg.fwb,
+                              fg.pwb ) )
+
+for( i in these ){
+  
+  d.10[, i ] <- as.numeric( d.10[, i ] )
+  
+}
+
+# do final computations
+d.11 <- d.10 %>%
+  mutate( factg_pwb = ( ( energy + nausea + family_needs + pain + side_effects + ill +
+            bed )*7 ) / answers.pwb,
+          
+          factg_ewb = ( ( sad + satisfied_coping + losing_hope + nervous + 
+            worry_dying + worry_get_worse )*6 ) / answers.ewb,
+          
+          factg_swb = ( ( friends + family + friends_support + fami_accept +
+            satisfied_comm + clost_to_partner + sex_life )*7 ) / answers.swb,
+          
+          factg_fwb = ( ( work + work_fulfilling + enjoy_life + accepted_illness +
+            sleeping_well + fun + content_qol )*7 ) / answers.fwb,
+          
+          factg_total = factg_ewb + factg_swb + factg_pwb + factg_fwb )
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
