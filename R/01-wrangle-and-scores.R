@@ -242,7 +242,8 @@ for( i in 1:nrow( d.3 ) ){  # loop on subject
   }
   }
 }
-  
+  # end loop
+
 
 ## Compute pyramid serving units variables ##
 
@@ -297,7 +298,7 @@ for( i in 1:nrow( d.3 ) ){  # loop on subject
                                ifelse( pat_sex == "Female", 0.81626 + 0.73022*sqfv6, NA ) ) )
  
  
-## use table  6 from `df.list` to create predicted fiber intake and % from fat
+## use table  6 from `df.list` to create predicted fiber intake and % from fat ##
  
  d.6 <- d.5 %>% # copy data before looping and alternating
    
@@ -344,4 +345,93 @@ for( i in 1:nrow( d.3 ) ){  # loop on subject
  }
  
  
+ 
+### Adjust fruit/veg frequency of food intake by gender/age specific factors ###
+ ##this generates results for cup equivalent MyPyramid units (FVCE FVCENOFF) ##
+ 
+# create age category variable
+for ( i in 1:nrow( d.6 ) ){
+  
+  for ( j in 2:length( age.lst ) ){
     
+    if( d.6[i, "age"] %in% age.lst[[j]] ){
+      
+      d.6[i, "age_cat"] <- j-1
+      
+    }
+    
+  }
+}
+ 
+
+## Input F/V cup equivalent adjustments, from fran.predict.nhis.fortim.cupeq.txt provided by Lisa Kahle 06/15/2007;
+
+fvcupadj <- tibble::tribble(
+     ~"gender", ~"AgeGrp", ~"FVCAFruit", ~"FVCAFrtJ", ~"FVCAFrFry", ~"FVCAOthPot", ~"FVCASalad", ~"FVCAOthVeg", ~"FVCADrBean",
+    1, 1, 0.999580, 1.499160, 0.721125, 1.000400, 0.272700, 0.387675, 0.717550, 
+    1, 2, 0.933450, 1.250580, 0.727700, 1.140030, 0.353970, 0.473920, 0.551540, 
+    1, 3, 0.867300, 1.000980, 0.641000, 0.999600, 0.377235, 0.499840, 0.566720, 
+    1, 4, 0.867300, 1.000980, 0.641000, 0.999600, 0.374963, 0.500240, 0.612360, 
+    1, 5, 0.867300, 1.000176, 0.548055, 0.999490, 0.416640, 0.499905, 0.500250, 
+    1, 6, 0.774916, 0.750735, 0.480750, 0.833175, 0.375000, 0.460585, 0.502285, 
+    1, 7, 0.657060, 0.750735, 0.499980, 0.754400, 0.411323, 0.416899, 0.575360, 
+    2, 1, 0.749235, 1.124370, 0.509595, 0.782020, 0.306788, 0.364468, 0.492150, 
+    2, 2, 0.867300, 1.000960, 0.455110, 0.876945, 0.286335, 0.395882, 0.341550, 
+    2, 3, 0.844838, 1.000176, 0.448700, 0.771260, 0.416625, 0.404303, 0.430530, 
+    2, 4, 0.789970, 0.938130, 0.448700, 0.771260, 0.499950, 0.408330, 0.345763, 
+    2, 5, 0.742350, 0.764776, 0.394856, 0.749700, 0.397688, 0.416913, 0.430685, 
+    2, 6, 0.712640, 0.750728, 0.444260, 0.771260, 0.312469, 0.436560, 0.430530, 
+    2, 7, 0.620475, 0.750434, 0.444260, 0.644235, 0.374963, 0.452214, 0.500400
+) %>%
+  mutate( gender = ifelse( gender == 1, "Male",
+                           ifelse( gender == 2, "Female", NA ) ) )
+
+
+# merge portion size adjustment variables to working dataset and multiply to 
+# estimate cup equivalents of F & V (`raw.pred.fv7.ce`, `raw.pred.fv6.ce`) and 
+# adjust the estimates using regression coefficients from CSFII 94-96 
+# (`pred.fv7.ce`, `pred.fv6.ce`)
+
+# this adjustment uses table 8 from `df.list` (i.e., `df.list[[8]]`)
+
+d.7 <- d.6 %>%
+  left_join( ., fvcupadj, by = c( "pat_sex" = "gender", "age_cat" = "AgeGrp" ) ) %>%
+  mutate( raw.pred.fv7.ce = juice*FVCAFrtJ + fruit*FVCAFruit + potatoes*FVCAFrFry
+          + white_potatoes*FVCAOthPot + beans*FVCADrBean + salad*FVCASalad
+          + vegetables*FVCAOthVeg,
+          
+          raw.pred.fv6.ce = juice*FVCAFrtJ + fruit*FVCAFruit
+          + white_potatoes*FVCAOthPot + beans*FVCADrBean + salad*FVCASalad
+          + vegetables*FVCAOthVeg, # excludes french fries
+          
+          # adjust using regression coefficients from CSFII 94-96
+          
+          pred.fv7.ce = ifelse( pat_sex == "Male", 
+                                ( 0.666228 + 0.770652*( sqrt(raw.pred.fv7.ce) ) )^2,
+                                ifelse( pat_sex == "Female", 
+                                        ( 0.611844 + 0.733890*( sqrt(raw.pred.fv7.ce) ) )^2,NA ) ),
+          pred.fv6.ce = ifelse( pat_sex == "Male", 
+                                ( 0.706696 + 0.742255*( sqrt(raw.pred.fv6.ce) ) )^2,
+                                ifelse( pat_sex == "Female", 
+                                        ( 0.616033 + 0.727761*( sqrt(raw.pred.fv6.ce) ) )^2,NA ) ) )
+
+
+# final dataset to return
+cols.keep <- c( which( colnames( d.7 ) %in% colnames( d.2 ) ), # original data columns
+                       which( colnames( d.7 ) %in% c( "pred.fiber", "pred.pcf",
+                                                      "pred.fv7.ce", "pred.fv6.ce",
+                                                      "raw.pred.fv7.ce", "raw.pred.fv6.ce",
+                                                      "predfv7ps", "predfv6ps") )
+)
+                       
+d.final <- d.7[, cols.keep ]
+
+## column descriptions ##
+# pred.fiber = predicted fiber intake (g)
+# pred.pcf = predicted percentage of calories from fat (%)
+# pred.fv7.ce = predicted F & V cup equivalent MyPyramid units, including french fries, adjusted for age and gender
+# pred.fv6.ce = predicted F & V cup equivalent MyPyramid units, excluding french fries, adjusted for age and gender
+# raw.pred.fv7.ce = predicted F & V cup equivalent MyPyramid units, including french fries, not adjusted for age and gender
+# raw.pred.fv6.ce = predicted F & V cup equivalent MyPyramid units, excluding french fries, not adjusted for age and gender
+# predfv7ps = predicted F & V 1/2 cup pyramid serving units, including french fries,
+# predfv6ps = predicted F & V 1/2 cup pyramid serving units, excluding french fries,
