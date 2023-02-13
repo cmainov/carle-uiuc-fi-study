@@ -2,6 +2,24 @@
 ###   02-GENERATE TABLES 1 AND 2
 ###------------------------------------------------------------
 
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+# 
+# In this script, we will generates table 1 and 2 summarizing epidemiological 
+# characteristics of the study sample.
+#
+# INPUT DATA FILES: 
+# i. "../02-data-wrangled/01-data-scores.rds"
+#
+#
+# OUTPUT FILES: 
+# i. "../04-tables-figures/01-table-1.txt"
+# ii "../04-tables-figures/02-table-2.txt"
+#
+# **A Special Note**: The data and tables are not being hosted on this GitHub repository given privacy concerns
+# Relative paths are used for obtaining the data from a local folder on my machine.
+#
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
 library( tidyverse )
 
 source( "R/utils.R" )
@@ -30,11 +48,17 @@ these.1 <- c( "age", "yrs_since_dx", "number_household", "chaos_score", "financi
               "factg_total", "factg_pwb", "factg_ewb", "factg_swb", "factg_fwb",
               "pred.fv6.ce", "pred.fiber", "pred.pcf" )
 
+## --------- End Subsection --------- ##
+
+
 ## (1.2)  Their names in the table
 tnames.1 <- c( "Age", "Years Since Cancer Diagnosis", "Household Size", "CHAOS Score",
                "Financial Skills Index", "FACT-G (Total)", "FACT-G (Physical)", "FACT-G (Emotional)", 
                "FACT-G (Social)", "FACT-G (Functional)", "F & V Cup Eq. (Adj. for age/sex)",
                "% Energy from Fiber", "% Energy from Fat" )
+
+## --------- End Subsection --------- ##
+
 
 ## (1.3) Categorical variables that will be used to generate the table and their names
 these.2 <- c( "pat_sex","pat_race_ethnicity", "pat_income_new",
@@ -45,6 +69,10 @@ tnames.2 <- c( "Sex", "Race/Ethnicity", "Income", "Marital Status",
                "Highest Education Level Attained", "Financially Support Others Outside Home",
                "Treatment Type", "Smoking Status", "Drinking Status" )
 
+## --------- End Subsection --------- ##
+
+
+## (1.4) Generate tables with internal helper function ##
 
 ## for-loop to generate table (continuous variables only)
 # outer loop will loop through the three datasets (to generate three columns) and the inner loop
@@ -108,7 +136,10 @@ for ( i in 1: length( these.2 ) ) {
                                              strata.level = "High FI" ) ) 
 }
 
+## --------- End Subsection --------- ##
 
+
+## (1.5) Clean up tables ##
 
 # merge as rows and reorder rows for final presentation
 c.1 <- cbind( d.in, d.in.fi, d.in.fs ) [, c(1,2,4,6) ] 
@@ -128,7 +159,7 @@ for( i in c( 2:4 ) ){
   
 }
 
-# colnames
+# column names
 
 fi.n <- table( d.epi$fi_binary )[2]
 fs.n <- table( d.epi$fi_binary )[1]
@@ -140,8 +171,10 @@ colnames( t.1 ) <- c( "Characteristic",
                       paste0( "Food Insecure (n = ", fi.n, ")" ),
                       paste0( "Food Secure (n = ", fs.n, ")" ) )
                               
+## --------- End Subsection --------- ##
 
-## Wilcoxon Rank Sum and Chi-Square/Fisher's Exact Test p values##
+
+## (1.6) Wilcoxon Rank Sum and Chi-Square/Fisher's Exact Test p values ##
 
 p.vals <- vector()
 for( i in 1:length( these.1 ) ){
@@ -174,8 +207,10 @@ for (i in 1:length( these.2 ) ){
   
 }
 
+## --------- End Subsection --------- ##
 
-## Clean up p-values column ##
+
+## (1.7) Clean up p-values column ##
 
 t.1 <- t.1 %>%
   mutate( p = ifelse( p < 0.05 & p >= 0.01, paste0( round( p, 2), "*" ),
@@ -186,7 +221,11 @@ t.1[,5] <- str_replace( t.1[,5], "(\\d\\.\\d)$", "\\10" ) # match digit, period,
 t.1[,5] <- str_replace( t.1[,5], "^1$", "0.99" ) # round down probabilities = 1
 
 t.1[,5][ is.na( t.1[,5] ) ] <- ""
-## Save Table 1 ##
+
+## --------- End Subsection --------- ##
+
+
+## (1.8) Save Table 1 ##
 
 write.table( t.1, "../04-tables-figures/01-table-1.txt", sep = "," )
 
@@ -202,8 +241,8 @@ write.table( t.1, "../04-tables-figures/01-table-1.txt", sep = "," )
 # with any of the characteristics. Finally, we will add another dimension by making two tables--one for cases and one 
 # for controls.
 
+## (2.1) First make variables splitting observations at the median ##
 
-# first make variables splitting observations at the median
 names.q2 <- paste0( c( "factg_total", "pred.fv6.ce", "pred.fiber", "pred.pcf" ), ".q2" )
 i.names <- c( "factg_total", "pred.fv6.ce", "pred.fiber", "pred.pcf" )
 i.names.2 <- c( "FACT-G", "F&V Cups", "% Energy Fiber", "% Energy Fat" )
@@ -215,11 +254,10 @@ for( i in 1:length(names.q2)){
   
 }
 
+## --------- End Subsection --------- ##
 
 
-## Table 2 for Cases ##
-
-# for-loop for continuous variables
+## (2.2) Loop through internal function to generate table 2 ##
 
 t.out.1 <- list()
 for( g in 1:length( i.names ) ) {
@@ -278,16 +316,21 @@ for( g in 1:length( names.q2 ) ) {
   
 }
 
-# column bind controls and cases separate
+## --------- End Subsection --------- ##
+
+
+## (2.3) Clean up tables ##
 final.bind.cat <- do.call( "cbind", t.out.2.cat )[ , -c( 3, 5, 7, 9, 11, 13, 15 )]
 
 
-## (Put Together Final Table 2 ###
+# put Together Final Table 2 ###
 
 t.2 <- bind_rows( final.bind, final.bind.cat )[ c( 1:5,14:61 ), ]
 
+## --------- End Subsection --------- ##
 
-## polish significant digits ##
+
+## (2.4) Polish significant digits ##
 
 for( i in c( 2:9 ) ){  # columns 2:9 only
   t.2[,i] <- str_replace( t.2[,i], "\\(0\\)", "(0.0)" )          # a zero in parentheses
@@ -298,7 +341,10 @@ for( i in c( 2:9 ) ){  # columns 2:9 only
   
 }
 
-### Column names ### 
+## --------- End Subsection --------- ##
+
+
+## (2.5) Column names ### 
 
 nms <- c( paste0( i.names.2, " M1" ), paste0( i.names.2, " M2" ) ) 
 
@@ -307,7 +353,10 @@ nms <- nms[ c( 1, 5, 2, 6, 3, 7, 4, 8 ) ]
 
 colnames( t.2 ) <- c( "Characteristic", nms )
 
-## Save Table 2 ##
+## --------- End Subsection --------- ##
+
+
+## (2.6) Save Table 2 ##
 write.table( t.2, "../04-tables-figures/02-table-2.txt", sep = "," )
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
