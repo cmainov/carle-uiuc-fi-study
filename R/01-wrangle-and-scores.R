@@ -1,5 +1,5 @@
 ##------------------------------------------------------------
-###   01-DATA-WRANGLING AND DIET SCORES
+###   01-DATA-WRANGLING, DIET SCORES, AND OTHER SCALES
 ###------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -25,10 +25,11 @@
 #
 #
 # Resources (Accessed 12 February 2023): 
-# i. NCI Multifactor Screener info and tables: https://epi.grants.cancer.gov/past-initiatives/open/multifactor/scoring.html
+# i. NCI Multifactor Screener info, tables, and SAS code: https://epi.grants.cancer.gov/past-initiatives/open/multifactor/scoring.html
 # ii. FACT-G info and documentation: https://www.facit.org/measures/FACT-G 
 # iii. USDA 6-item FI screener info and documentation: https://www.ers.usda.gov/media/8282/short2012.pdf 
-# iv. CHAOS scale paper: https://doi.org/10.1016/0193-3973(95)90028-4
+# iv. CHAOS scale, original paper: https://doi.org/10.1016/0193-3973(95)90028-4
+# v. Financial skills index (Gundersen et al.): https://doi.org/10.3945/jn.112.162214
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -793,10 +794,158 @@ d.15 <- d.14 %>%
 
 
 
-### (11.0) Save ###
+### (11.0) Financial MGMT Skills Index ###
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-saveRDS( d.15, "../02-data-wrangled/01-data-scores.rds" )
+## SEE: https://doi.org/10.3945/jn.112.162214 for how index is computed
+
+
+## (11.1) Column indicators of variables needed for scale ##
+
+these.financial <- which( colnames( d.13 ) %in% c( "review_bills", "bills_on_time",
+                                               "budget", "review_income" ) )
+# NOTE: missing one variable (credit bill pay on time?)
+
+
+## (10.2) Convert those columns to numerical values based on documentation ##
+
+# subset the array of interest
+fin.sub <- d.15[ these.financial ]
+
+# recode the responses
+fin.sub[ fin.sub=="Usually" ] <- 1
+fin.sub[ fin.sub=="Always" ] <- 1
+fin.sub[ fin.sub=="Never" ] <- 0
+fin.sub[ fin.sub=="Sometimes" ] <- 0
+fin.sub[ fin.sub=="Rarely" ] <- 0
+
+# copy working dataset
+d.16 <- d.15
+
+# replace array in dataset with recoded array
+d.16[ these.financial ] <- fin.sub
+
+
+## (11.3) Compute financial skills score as simple sum  ##
+
+# convert item columns to numeric before computing final score
+for( i in these.financial ){
+  
+  d.16[, i ] <- as.numeric( d.16[, i ] )
+  
+}
+
+# compute final score
+d.17 <- d.16 %>%
+  mutate( financial_skills_index = review_bills + bills_on_time +
+            budget + review_income )
+
+## --------- End Subsection --------- ##
+
+
+## (11.4) New column descriptions ##
+
+# financial_skills_index = financial skills index (see Gundersen et al. cited in preamble)
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+### (12.0) Other Data Wrangline ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## (12.1) Ethnicity and Race Variables ##
+d.18 <- d.17 %>%
+  mutate( pat_ethnicity = ifelse( pat_ethnicity___1 == "Checked","Mexican/Mexican-American/Chicano",
+                                  ifelse( pat_ethnicity___2 == "Checked", "Puerto Rican",
+                                          ifelse( pat_ethnicity___3=="Checked", "Cuban",
+                                                  ifelse( pat_ethnicity___4 == "Checked", "Other Hispanic origin",
+                                                          ifelse( pat_ethnicity___5 == "Checked", "None of these", NA) ) ) ) ),
+          pat_race_ethnicity = ifelse( pat_ethnicity %in% c( "Mexican/Mexican-American/Chicano",
+                                                     "Puerto Rican",
+                                                     "Cuban",
+                                                     "Other Hispanic origin" ), "Hispanic",
+                               ifelse( pat_race == "Caucasian or White" & pat_ethnicity %notin% c( "Mexican/Mexican-American/Chicano",
+                                                                                               "Puerto Rican",
+                                                                                               "Cuban",
+                                                                                               "Other Hispanic origin" ), "white",
+                                       ifelse( pat_race == "Black or African-American", "Black or African-American", 
+                                               ifelse( pat_race == "Other", "Other",
+                                                       ifelse( pat_race == "Asian (i.e. original people of the Far East, Southeast Asia, and Indian subcontinent)",
+                                                               "Asian", NA ) ) ) ) ) )
+
+## --------- End Subsection --------- ##
+
+
+## (12.2) Fix age at Diagnosis (some subjects put year of Dx instead of date) ## 
+
+d.19 <- d.18 %>%
+  mutate( year_dos = as.numeric( str_extract( d.16$date, "\\d\\d\\d\\d(?=\\-)" ) ), # year of survey date
+    age_diagnosis = ifelse( age_diagnosis > 1000, age - ( year_dos - age_diagnosis ), age_diagnosis ),
+    yrs_since_dx = age - age_diagnosis ) %>%
+  select( -year_dos )
+
+## --------- End Subsection --------- ##
+
+
+## (12.3) Treatment type, recode smoking/drinking statuses ##
+
+d.20 <- d.19 %>%
+  
+  # treatment type
+  mutate( tx_type = ifelse( type_treatment___1=="Checked", "Surgery",
+                            ifelse( type_treatment___2=="Checked", "Chemotherapy",
+                                    ifelse( type_treatment___3=="Checked", "Radiation",
+                                            ifelse( type_treatment___4=="Checked", "Hormone Therapy",
+                                                    ifelse( type_treatment___5=="Checked", "Don't Know",
+                                                            ifelse( type_treatment___6=="Checked", "Other", NA )))))),
+          # recode drinking status into three categories
+          pat_alcohol_recode = ifelse( pat_alcohol_drinking == "I drank alcohol in the past, but quit drinking over a year ago",
+                                       "Former",
+                                       ifelse( pat_alcohol_drinking == "I drank alcohol in the past, but quit drinking with the last 1 month",
+                                               "Former",
+                                               ifelse( pat_alcohol_drinking == "I drank alcohol in the past, but quit drinking with the last 6 months",
+                                                       "Former",
+                                                       ifelse( pat_alcohol_drinking == "I drank alcohol in the past, but quit drinking within the last year",
+                                                               "Former",
+                                                               ifelse( pat_alcohol_drinking == "I have never drunk alcohol",
+                                                                       "Never",
+                                                                       ifelse( pat_alcohol_drinking == "I currently drink alcohol",
+                                                                               "Current", NA ) ) ) ) ) ),
+         
+           # recode smoking status into three categories
+          pat_smoking_recode = ifelse( pat_smoking_status == "I have smoked in the past but quit over a year ago",
+                                       "Former",
+                                       ifelse( pat_smoking_status == "I have smoked in the past but quit within the last 1 month",
+                                               "Former",
+                                               ifelse( pat_smoking_status == "I have smoked in the past but quit within the last 6 months",
+                                                       "Former",
+                                                       ifelse( pat_smoking_status == "I have smoked in the past but quit within the last year",
+                                                               "Former",
+                                                               ifelse( pat_smoking_status == "I have never smoked",
+                                                                       "Never",
+                                                                       ifelse( pat_smoking_status == "I currently smoke cigarettes",
+                                                                               "Current", NA ) ) ) ) ) ) )
+                                                                               
+                                                                       
+                                                               
+
+sum( table( d.20$pat_smoking_recode) )
+
+## (12.4) New column descriptions ##
+
+# yrs_since_dx = years since cancer diagnosis
+# pat_smoking_recode = recode smoking status into 3 categories (current, former, never)
+# pat_drinking_recode = recode drinking status into 3 categories (current, former, never)
+
+
+
+
+### (13.0) Save ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+saveRDS( d.20, "../02-data-wrangled/01-data-scores.rds" )
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
