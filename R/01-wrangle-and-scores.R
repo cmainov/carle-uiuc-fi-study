@@ -873,7 +873,10 @@ d.18 <- d.17 %>%
                                        ifelse( pat_race == "Black or African-American", "Black or African-American", 
                                                ifelse( pat_race == "Other", "Other",
                                                        ifelse( pat_race == "Asian (i.e. original people of the Far East, Southeast Asia, and Indian subcontinent)",
-                                                               "Asian", NA ) ) ) ) ) )
+                                                               "Asian", NA ) ) ) ) ),
+          pat_race_ethnicity_b = ifelse( pat_race_ethnicity =="Black or African-American", "Black or African-American",
+                                         ifelse( pat_race_ethnicity %in% c( "Hispanic", "Asian" ), "Other",
+                                                 ifelse( pat_race_ethnicity == "white", "white", NA ) ) ) )
 
 ## --------- End Subsection --------- ##
 
@@ -938,14 +941,112 @@ sum( table( d.20$pat_smoking_recode) )
 # yrs_since_dx = years since cancer diagnosis
 # pat_smoking_recode = recode smoking status into 3 categories (current, former, never)
 # pat_drinking_recode = recode drinking status into 3 categories (current, former, never)
-
-
-
-
-### (13.0) Save ###
+# pat_race_ethnicity_b = 3 category race/ethnicity
+# pat_race_ethnicity = 4 category race/ethnicity
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-saveRDS( d.20, "../02-data-wrangled/01-data-scores.rds" )
 
+
+
+### (14.0) Cancer Stage Data Wrangling ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## (14.1) Read in data ##
+stage.raw <- read.csv( "../01-data-raw/cancerstage-data.csv" )
+# it looks like this column is very unstructured and will requires lots of wrangling
+
+## --------- End Subsection --------- ##
+
+
+## (14.2) Clean up the column ##
+stage.col <- stage.raw$disease_stage
+str_replace_all( stage.col, fixed(" "), "") # remove all white spaces
+
+stage.col[ str_detect( stage.col, "III") ] <- "III"
+stage.col[ str_detect( stage.col, "IV") ] <- "IV"
+stage.col[ str_detect( stage.col, "^II$") ] <- "II"
+stage.col[ str_detect( stage.col, "^II[ A-HJ-UW-Z]$") ] <- "II" # all stage two categorizations not followed by "V", "I"
+stage.col[ str_detect( stage.col, "^I$") ] <- "I"
+stage.col[ str_detect( stage.col, "^I[ A-HJ-UW-Z]$") ] <- "I" # all stage one categorizations not followed by "V", "I"
+stage.col[ str_detect( stage.col, "T") ] <- NA # those with TNM classification set to missing
+stage.col[ str_detect( stage.col, "^1") ] <- "I"
+stage.col[ str_detect( stage.col, "^2") ] <- "II"
+stage.col[ str_detect( stage.col, "^3") ] <- "III"
+stage.col[ str_detect( stage.col, "^4") ] <- "IV"
+
+#else 
+stage.col[ stage.col %notin% c( "0", "I","II", "III", "IV")] <- NA
+
+## --------- End Subsection --------- ##
+
+## (14.3) Save ##
+stage.raw$disease_stage <-  stage.col
+
+d.21 <- d.20 %>%
+  left_join(., stage.raw )
+
+## --------- End Subsection --------- ##
+
+
+## (14.4) New column descriptions ##
+
+# disease_stage = cancer stage (0-IV)
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+### (15.0) Malnutrition ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## (15.1) Change malnutrition variables to numeric based on table##
+d.22 <- d.21 %>%
+  mutate( lost_weight = ifelse( lost_weight == "No", 0,
+                                ifelse( lost_weight == "Yes", 1,
+                                        ifelse( lost_weight == "Unsure", 2, NA))),
+          eating_poorly = ifelse( eating_poorly == "Yes", 1,
+                                  ifelse( eating_poorly == "No", 0, NA ) ),
+          weight_amount = ifelse( is.na(weight_amount), 0,
+                                  ifelse( weight_amount == "2-13 lb", 1,
+                                    ifelse( weight_amount == "14-23 lb", 2,
+                                            ifelse( weight_amount == "24-33 lb", 3,
+                                                    ifelse( weight_amount == "34 lb or more", 4,
+                                                            ifelse( weight_amount == "Unsure", 5, NA ))))) ),
+          malnutrition_score = lost_weight + eating_poorly + weight_amount,
+          malnutrition_index = ifelse( malnutrition_score >= 2, "At Risk",
+                                       ifelse( malnutrition_score < 2, "Not at Risk",
+                                       NA ) ) )
+
+## --------- End Subsection --------- ##
+
+
+## (15.2) Poverty calculation
+
+# based on https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines 
+levs.inc <- levels( factor( d.22$pat_income_new))
+
+d.23 <- d.22 %>%
+  mutate( poverty_line = ifelse( number_household == 1 & pat_income_new %in% levs.inc[c(1,2)], 1,
+                                 ifelse( number_household == 2 & pat_income_new %in% levs.inc[c(1,2,4)], 1,
+                                         ifelse( number_household == 3 & pat_income_new %in% levs.inc[c(1,2,4)], 1,
+                                                 ifelse( number_household == 4 & pat_income_new %in% levs.inc[c(1,2,4,5)], 1,
+                                                         ifelse( number_household == 5 & pat_income_new %in% levs.inc[c(1,2,4,5)], 1,
+                                                                 ifelse( number_household == 6 & pat_income_new %in% levs.inc[c(1,2,4,5)], 1,
+                                                                         ifelse( number_household == 7 & pat_income_new %in% levs.inc[c(1,2,4,5)], 1,
+                                                                                 ifelse( number_household == 8 & pat_income_new %in% levs.inc[c(1,2,4,5,7)], 1,
+                                                                                         ifelse( is.na(pat_income_new) | is.na( number_household ), NA, 0 ))))))))))
+## --------- End Subsection --------- ##
+
+
+## (15.3) New column descriptions ##
+
+# malnutrition_index = binary malnutrition index
+# malnutrition_score = malnutrition index score used to create binary indicator
+# poverty_line = poverty status indicator (1 == below poverty line)
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+saveRDS( d.23, "../02-data-wrangled/01-data-scores.rds" )
+write.csv( d.23, "../02-data-wrangled/01-data-scores.csv")
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 

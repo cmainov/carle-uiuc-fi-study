@@ -61,13 +61,15 @@ tnames.1 <- c( "Age", "Years Since Cancer Diagnosis", "Household Size", "CHAOS S
 
 
 ## (1.3) Categorical variables that will be used to generate the table and their names
-these.2 <- c( "pat_sex","pat_race_ethnicity", "pat_income_new",
+these.2 <- c( "pat_sex","pat_race_ethnicity_b", "pat_income_new", "poverty_line",
               "pat_marital_status", "pat_education", "financial_support",
-              "tx_type", "pat_smoking_recode", "pat_alcohol_recode" )
+              "tx_type", "pat_smoking_recode", "pat_alcohol_recode",
+              "malnutrition_index", "primary_tumor_site", "disease_stage")
 
-tnames.2 <- c( "Sex", "Race/Ethnicity", "Income", "Marital Status", 
+tnames.2 <- c( "Sex", "Race/Ethnicity", "Income", "Poverty Status", "Marital Status", 
                "Highest Education Level Attained", "Financially Support Others Outside Home",
-               "Treatment Type", "Smoking Status", "Drinking Status" )
+               "Treatment Type", "Smoking Status", "Drinking Status",
+               "Malnutrition Risk", "Tumor Site", "Stage" )
 
 ## --------- End Subsection --------- ##
 
@@ -325,7 +327,7 @@ final.bind.cat <- do.call( "cbind", t.out.2.cat )[ , -c( 3, 5, 7, 9, 11, 13, 15 
 
 # put Together Final Table 2 ###
 
-t.2 <- bind_rows( final.bind, final.bind.cat )[ c( 1:5,14:61 ), ]
+t.2 <- bind_rows( final.bind, final.bind.cat )[ c( 1:5,14:87 ), ]
 
 ## --------- End Subsection --------- ##
 
