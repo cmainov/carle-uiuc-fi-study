@@ -58,7 +58,7 @@ d.raw <- read.csv( "../01-data-raw/raw_data.csv")
 
 d.raw[ d.raw == "" ] <- NA
 
-  ## --------- End Subsection --------- ##
+## --------- End Subsection --------- ##
 
 
 ## (1.2) Fix Income Variable (i.e., recode old survey version levels to levels on new survey) ##
@@ -71,19 +71,19 @@ new.inc <- levels( as.factor( d.raw$pat_income_new ) )
 
 # subset those that don't have new income variable
 d.1 <-( d.old <- d.raw %>%
-  filter( consent_version == "Prior to V6" & is.na( pat_income_new ) ) %>%
-  mutate( pat_income_new = ifelse( pat_income == old.inc[1], new.inc[3],
-                                   ifelse( pat_income == old.inc[2], new.inc[2],
-                                           ifelse( pat_income == old.inc[3], new.inc[4],
-                                                   ifelse( pat_income == old.inc[4], new.inc[3], ## this one is problematic
-                                                           ifelse( pat_income == old.inc[5], new.inc[5],
-                                                                   ifelse( pat_income == old.inc[6], new.inc[5],
-                                                                           ifelse( pat_income == old.inc[7], new.inc[5],
-                                                                                   ifelse( pat_income == old.inc[8], new.inc[7],
-                                                                                           ifelse( pat_income == old.inc[9], new.inc[1],
-                                                                                                   ifelse( pat_income == old.inc[10], new.inc[8],
-                                                                                                           ifelse( pat_income == old.inc[11], new.inc[8],
-                                                                                                                   ifelse( pat_income == old.inc[12], new.inc[9], NA )))))))))))))) %>%
+          filter( consent_version == "Prior to V6" & is.na( pat_income_new ) ) %>%
+          mutate( pat_income_new = ifelse( pat_income == old.inc[1], new.inc[3],
+                                           ifelse( pat_income == old.inc[2], new.inc[2],
+                                                   ifelse( pat_income == old.inc[3], new.inc[4],
+                                                           ifelse( pat_income == old.inc[4], new.inc[3], ## this one is problematic
+                                                                   ifelse( pat_income == old.inc[5], new.inc[5],
+                                                                           ifelse( pat_income == old.inc[6], new.inc[5],
+                                                                                   ifelse( pat_income == old.inc[7], new.inc[5],
+                                                                                           ifelse( pat_income == old.inc[8], new.inc[7],
+                                                                                                   ifelse( pat_income == old.inc[9], new.inc[1],
+                                                                                                           ifelse( pat_income == old.inc[10], new.inc[8],
+                                                                                                                   ifelse( pat_income == old.inc[11], new.inc[8],
+                                                                                                                           ifelse( pat_income == old.inc[12], new.inc[9], NA )))))))))))))) %>%
   rbind( ., d.raw %>% filter( d.raw$record_id %notin% d.old$record_id ) ) %>%
   select(-pat_income) # remove old income column
 
@@ -117,7 +117,7 @@ d.2 <- d.1 %>% # for those that have a milk entry that is not missing, they will
 ## (2.2) Variables to convert units for
 
 vars.1 <- names( d.2[ c( 56, 58:71, 223:226 )])
-  
+
 d.2[ , vars.1 ]                          #this shows the above diet variables are present in the combined dataset
 
 ## --------- End Subsection --------- ##
@@ -135,7 +135,7 @@ for( i in 1:length( vars.1 ) ){
   d.2$flag_diet <- d.2$flag_diet + as.numeric( is.na( d.2[, vars.1[i] ] ) )
   
   d.2$flag_diet <- ifelse( d.2$flag_diet >= 1, 1, d.2$flag_diet ) # ensure it is "1" or "0"
-
+  
 }
 
 # 12 with at least one diet variable missing
@@ -155,14 +155,14 @@ these.1 <- which( colnames( d.2 )%in% vars.1 )
 
 for ( i in these.1 ){
   d.2[i] <- ifelse( d.2[i] == fr[1], 1,
-                  ifelse( d.2[i] == fr[2], 0.214,
-                          ifelse( d.2[i] == fr[3], 0.067, 
-                                  ifelse( d.2[i] == fr[4], 2, 
-                                          ifelse( d.2[i] == fr[5], 3, 
-                                                  ifelse( d.2[i] == fr[6], 0.5, 
-                                                          ifelse( d.2[i] == fr[7], 4.5, 
-                                                                  ifelse( d.2[i] == fr[8], 0.786, 
-                                                                          ifelse( d.2[i] == fr[9], 0, NA ) ) ) ) ) ) ) ) )
+                    ifelse( d.2[i] == fr[2], 0.214,
+                            ifelse( d.2[i] == fr[3], 0.067, 
+                                    ifelse( d.2[i] == fr[4], 2, 
+                                            ifelse( d.2[i] == fr[5], 3, 
+                                                    ifelse( d.2[i] == fr[6], 0.5, 
+                                                            ifelse( d.2[i] == fr[7], 4.5, 
+                                                                    ifelse( d.2[i] == fr[8], 0.786, 
+                                                                            ifelse( d.2[i] == fr[9], 0, NA ) ) ) ) ) ) ) ) )
 }
 
 # check and ensure fidelity
@@ -190,47 +190,47 @@ df.list <- url %>%
 ## (3.2) Convert food group names to those present in working dataset ##
 for( i in 2:length(df.list)){
   if( i %in% 2:5){
-df.list[[i]]$`Food Group` <- ifelse( str_detect(df.list[[i]]$`Food Group`, "juice"), "juice", 
-                                     ifelse(str_detect(df.list[[i]]$`Food Group`, "cereals"), "cold_cereals",
-                                            ifelse(str_detect(df.list[[i]]$`Food Group`, "Bacon"), "bacon_sausage", 
-                                                   ifelse( str_detect(df.list[[i]]$`Food Group`, "dogs"), "hot_dogs", 
-                                                           ifelse( str_detect(df.list[[i]]$`Food Group`, "Fruit"), "fruit", 
-                                                                   ifelse( str_detect(df.list[[i]]$`Food Group`, "dressing"), "regular_fat",
-                                                                           ifelse( str_detect(df.list[[i]]$`Food Group`, "Salad \\("), "salad",
-                                                                                   ifelse( str_detect(df.list[[i]]$`Food Group`, "bread"), "bread", 
-                                                                                           ifelse( str_detect(df.list[[i]]$`Food Group`, "Fried"), "potatoes",
-                                                                                                   ifelse( str_detect(df.list[[i]]$`Food Group`, "white pot"), "white_potatoes",
-                                                                                                           ifelse( str_detect(df.list[[i]]$`Food Group`, "beans"), "beans",
-                                                                                                                  ifelse( str_detect(df.list[[i]]$`Food Group`, "vegetable"), "vegetables",
-                                                                                                                          ifelse( str_detect(df.list[[i]]$`Food Group`, "Pasta"), "pasta", 
-                                                                                                                                  ifelse( str_detect(df.list[[i]]$`Food Group`, "Nuts"), "nuts",
-                                                                                                                                          ifelse( str_detect(df.list[[i]]$`Food Group`, "2%"), "milk_2p",
-                                                                                                                                                  ifelse( str_detect(df.list[[i]]$`Food Group`, "Chips"), "chips",
-                                                                                                                                                  ifelse( str_detect(df.list[[i]]$`Food Group`, "1%"), "milk_1p",
-                                                                                                                                                          ifelse( str_detect(df.list[[i]]$`Food Group`, "Skim"), "milk_skim",
-                                                                                                                                                                  ifelse( str_detect(df.list[[i]]$`Food Group`, "Whole milk"), "milk_whole", df.list[[i]]$`Food Group` ) ))))))))))))))))))
+    df.list[[i]]$`Food Group` <- ifelse( str_detect(df.list[[i]]$`Food Group`, "juice"), "juice", 
+                                         ifelse(str_detect(df.list[[i]]$`Food Group`, "cereals"), "cold_cereals",
+                                                ifelse(str_detect(df.list[[i]]$`Food Group`, "Bacon"), "bacon_sausage", 
+                                                       ifelse( str_detect(df.list[[i]]$`Food Group`, "dogs"), "hot_dogs", 
+                                                               ifelse( str_detect(df.list[[i]]$`Food Group`, "Fruit"), "fruit", 
+                                                                       ifelse( str_detect(df.list[[i]]$`Food Group`, "dressing"), "regular_fat",
+                                                                               ifelse( str_detect(df.list[[i]]$`Food Group`, "Salad \\("), "salad",
+                                                                                       ifelse( str_detect(df.list[[i]]$`Food Group`, "bread"), "bread", 
+                                                                                               ifelse( str_detect(df.list[[i]]$`Food Group`, "Fried"), "potatoes",
+                                                                                                       ifelse( str_detect(df.list[[i]]$`Food Group`, "white pot"), "white_potatoes",
+                                                                                                               ifelse( str_detect(df.list[[i]]$`Food Group`, "beans"), "beans",
+                                                                                                                       ifelse( str_detect(df.list[[i]]$`Food Group`, "vegetable"), "vegetables",
+                                                                                                                               ifelse( str_detect(df.list[[i]]$`Food Group`, "Pasta"), "pasta", 
+                                                                                                                                       ifelse( str_detect(df.list[[i]]$`Food Group`, "Nuts"), "nuts",
+                                                                                                                                               ifelse( str_detect(df.list[[i]]$`Food Group`, "2%"), "milk_2p",
+                                                                                                                                                       ifelse( str_detect(df.list[[i]]$`Food Group`, "Chips"), "chips",
+                                                                                                                                                               ifelse( str_detect(df.list[[i]]$`Food Group`, "1%"), "milk_1p",
+                                                                                                                                                                       ifelse( str_detect(df.list[[i]]$`Food Group`, "Skim"), "milk_skim",
+                                                                                                                                                                               ifelse( str_detect(df.list[[i]]$`Food Group`, "Whole milk"), "milk_whole", df.list[[i]]$`Food Group` ) ))))))))))))))))))
   }
   
   if( i %in% 6:8){
     df.list[[i]]$Parameter <- ifelse( str_detect(df.list[[i]]$Parameter, "juice"), "juice", 
-                                         ifelse(str_detect(df.list[[i]]$Parameter, "cereals"), "cold_cereals",
-                                                ifelse(str_detect(df.list[[i]]$Parameter, "Bacon"), "bacon_sausage", 
-                                                       ifelse( str_detect(df.list[[i]]$Parameter, "dogs"), "hot_dogs", 
-                                                               ifelse( str_detect(df.list[[i]]$Parameter, "Fruit"), "fruit", 
-                                                                       ifelse( str_detect(df.list[[i]]$Parameter, "dressing"), "regular_fat",
-                                                                               ifelse( str_detect(df.list[[i]]$Parameter, "Salad (P3)"), "salad",
-                                                                                       ifelse( str_detect(df.list[[i]]$Parameter, "bread"), "bread", 
-                                                                                               ifelse( str_detect(df.list[[i]]$Parameter, "Fried"), "potatoes",
-                                                                                                       ifelse( str_detect(df.list[[i]]$Parameter, "white pot"), "white_potatoes",
-                                                                                                               ifelse( str_detect(df.list[[i]]$Parameter, "beans"), "beans",
-                                                                                                                       ifelse( str_detect(df.list[[i]]$Parameter, "vegetable"), "vegetables",
-                                                                                                                               ifelse( str_detect(df.list[[i]]$Parameter, "Pasta"), "pasta", 
-                                                                                                                                       ifelse( str_detect(df.list[[i]]$Parameter, "Nuts"), "nuts",
-                                                                                                                                               ifelse( str_detect(df.list[[i]]$Parameter, "2%"), "milk_2p",
-                                                                                                                                                       ifelse( str_detect(df.list[[i]]$Parameter, "Chips"), "chips",
-                                                                                                                                                               ifelse( str_detect(df.list[[i]]$Parameter, "1%"), "milk_1p",
-                                                                                                                                                                       ifelse( str_detect(df.list[[i]]$Parameter, "Skim"), "milk_skim",
-                                                                                                                                                                               ifelse( str_detect(df.list[[i]]$Parameter, "Whole milk"), "milk_whole", df.list[[i]]$Parameter ) ))))))))))))))))))
+                                      ifelse(str_detect(df.list[[i]]$Parameter, "cereals"), "cold_cereals",
+                                             ifelse(str_detect(df.list[[i]]$Parameter, "Bacon"), "bacon_sausage", 
+                                                    ifelse( str_detect(df.list[[i]]$Parameter, "dogs"), "hot_dogs", 
+                                                            ifelse( str_detect(df.list[[i]]$Parameter, "Fruit"), "fruit", 
+                                                                    ifelse( str_detect(df.list[[i]]$Parameter, "dressing"), "regular_fat",
+                                                                            ifelse( str_detect(df.list[[i]]$Parameter, "Salad (P3)"), "salad",
+                                                                                    ifelse( str_detect(df.list[[i]]$Parameter, "bread"), "bread", 
+                                                                                            ifelse( str_detect(df.list[[i]]$Parameter, "Fried"), "potatoes",
+                                                                                                    ifelse( str_detect(df.list[[i]]$Parameter, "white pot"), "white_potatoes",
+                                                                                                            ifelse( str_detect(df.list[[i]]$Parameter, "beans"), "beans",
+                                                                                                                    ifelse( str_detect(df.list[[i]]$Parameter, "vegetable"), "vegetables",
+                                                                                                                            ifelse( str_detect(df.list[[i]]$Parameter, "Pasta"), "pasta", 
+                                                                                                                                    ifelse( str_detect(df.list[[i]]$Parameter, "Nuts"), "nuts",
+                                                                                                                                            ifelse( str_detect(df.list[[i]]$Parameter, "2%"), "milk_2p",
+                                                                                                                                                    ifelse( str_detect(df.list[[i]]$Parameter, "Chips"), "chips",
+                                                                                                                                                            ifelse( str_detect(df.list[[i]]$Parameter, "1%"), "milk_1p",
+                                                                                                                                                                    ifelse( str_detect(df.list[[i]]$Parameter, "Skim"), "milk_skim",
+                                                                                                                                                                            ifelse( str_detect(df.list[[i]]$Parameter, "Whole milk"), "milk_whole", df.list[[i]]$Parameter ) ))))))))))))))))))
     
   }
 }
@@ -250,13 +250,13 @@ these.2 <- which( colnames( d.2 ) %in% vars.1 )
 
 # age list
 age.lst <- list( c( 0:17 ),
-      c( 18:27 ),
-      c( 28:37 ),
-      c( 38:47 ),
-      c( 48:57 ),
-      c( 58:67 ),
-      c( 68:77 ),
-      c( 78:99 ) )
+                 c( 18:27 ),
+                 c( 28:37 ),
+                 c( 38:47 ),
+                 c( 48:57 ),
+                 c( 58:67 ),
+                 c( 68:77 ),
+                 c( 78:99 ) )
 
 
 # copy before adjustments 
@@ -285,133 +285,133 @@ for( i in 1:nrow( d.3 ) ){  # loop on subject
           d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,j])
       }
     }
-  
-  # females inner loop
-  if( d.3[ i, "age" ] %in% age.lst[[j]] & d.3[ i, "pat_sex" ] == "Female" ){
     
-    for( g in 11:17){
-      d.3[ i, paste0( df.list[[4]]$`Food Group`[g],"_m" ) ] <-
-        d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,j])
+    # females inner loop
+    if( d.3[ i, "age" ] %in% age.lst[[j]] & d.3[ i, "pat_sex" ] == "Female" ){
+      
+      for( g in 11:17){
+        d.3[ i, paste0( df.list[[4]]$`Food Group`[g],"_m" ) ] <-
+          d.3[ i, which(colnames( d.3 ) == df.list[[4]]$`Food Group`[g]) ]*as.numeric(df.list[[4]][g,j])
+      }
     }
   }
-  }
 }
-  # end loop
+# end loop
 
 ## --------- End Subsection --------- ##
 
 
 ## (4.3) Compute 1/2 cup pyramid serving units variables ##
 
- d.4 <- d.3 %>%
-   mutate( fv7 = fruit_m + vegetables_m + juice_m + potatoes_m + white_potatoes_m + salad_m + beans_m,
-           fv6 = fruit_m + vegetables_m + juice_m + white_potatoes_m + salad_m + beans_m, # remove fried potatoes
-           sqfv7 = sqrt( fv7 ),
-           sqfv6 = sqrt( fv6 ),
-           ## create predicted outcomes ##
-           predfv7ps = ifelse( pat_sex == "Male", 0.90679 + 0.75856*sqfv7,
-                               ifelse( pat_sex == "Female", 0.81956 + 0.73086*sqfv7, NA ) ),
-           predfv6ps = ifelse( pat_sex == "Male", 0.94077 + 0.73906*sqfv6,
-                               ifelse( pat_sex == "Female", 0.81626 + 0.73022*sqfv6, NA ) ) )
- 
- 
-# ---------------------------------------------------------------------------------------------------------------------------------------------------------
- 
+d.4 <- d.3 %>%
+  mutate( fv7 = fruit_m + vegetables_m + juice_m + potatoes_m + white_potatoes_m + salad_m + beans_m,
+          fv6 = fruit_m + vegetables_m + juice_m + white_potatoes_m + salad_m + beans_m, # remove fried potatoes
+          sqfv7 = sqrt( fv7 ),
+          sqfv6 = sqrt( fv6 ),
+          ## create predicted outcomes ##
+          predfv7ps = ifelse( pat_sex == "Male", 0.90679 + 0.75856*sqfv7,
+                              ifelse( pat_sex == "Female", 0.81956 + 0.73086*sqfv7, NA ) ),
+          predfv6ps = ifelse( pat_sex == "Male", 0.94077 + 0.73906*sqfv6,
+                              ifelse( pat_sex == "Female", 0.81626 + 0.73022*sqfv6, NA ) ) )
 
- 
- 
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
 ### (5.0) Compute `pred.fiber` and `pred.pcf` (Age and Sex-Specific) ###
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
- 
+
 ## (5.1) Age-sex adjustment
- 
+
 # it will use tables 2 (for males) and 3 (for females) to make the conversions from `df.list`
- 
- d.5 <- d.4 # copy before looping and alterating
- for( i in 1:nrow( d.5 ) ){  # loop on subject
-   
-   for( j in 2:length( age.lst) ){ # loop on age which determines which columns of reference table to use
-     
-     ## inner loops will be determined based on which rows to use from the table
-     
-     # males inner loop
-     if( d.5[ i, "age" ] %in% age.lst[[j]] & d.5[ i, "pat_sex" ] == "Male" ){
-       
-       for( g in 3:20){ # loop on all food items this time
-         d.5[ i, paste0( df.list[[2]]$`Food Group`[g],"_a" ) ] <-
-           d.5[ i, which(colnames( d.5 ) == df.list[[2]]$`Food Group`[g]) ]*as.numeric(df.list[[2]][g,j])
-       }
-     }
-     
-     # females inner loop
-     if( d.5[ i, "age" ] %in% age.lst[[j]] & d.5[ i, "pat_sex" ] == "Female" ){
-       
-       for( g in 3:20){
-         d.5[ i, paste0( df.list[[3]]$`Food Group`[g],"_a" ) ] <-
-           d.5[ i, which(colnames( d.5 ) == df.list[[3]]$`Food Group`[g]) ]*as.numeric(df.list[[3]][g,j])
-       }
-     }
-   }
- }
- 
- ## --------- End Subsection --------- ##
- 
- 
+
+d.5 <- d.4 # copy before looping and alterating
+for( i in 1:nrow( d.5 ) ){  # loop on subject
+  
+  for( j in 2:length( age.lst) ){ # loop on age which determines which columns of reference table to use
+    
+    ## inner loops will be determined based on which rows to use from the table
+    
+    # males inner loop
+    if( d.5[ i, "age" ] %in% age.lst[[j]] & d.5[ i, "pat_sex" ] == "Male" ){
+      
+      for( g in 3:20){ # loop on all food items this time
+        d.5[ i, paste0( df.list[[2]]$`Food Group`[g],"_a" ) ] <-
+          d.5[ i, which(colnames( d.5 ) == df.list[[2]]$`Food Group`[g]) ]*as.numeric(df.list[[2]][g,j])
+      }
+    }
+    
+    # females inner loop
+    if( d.5[ i, "age" ] %in% age.lst[[j]] & d.5[ i, "pat_sex" ] == "Female" ){
+      
+      for( g in 3:20){
+        d.5[ i, paste0( df.list[[3]]$`Food Group`[g],"_a" ) ] <-
+          d.5[ i, which(colnames( d.5 ) == df.list[[3]]$`Food Group`[g]) ]*as.numeric(df.list[[3]][g,j])
+      }
+    }
+  }
+}
+
+## --------- End Subsection --------- ##
+
+
 ## (5.2) Use table  6 from `df.list` to create predicted fiber intake and % from fat ##
- 
- d.6 <- d.5 %>% # copy data before looping and alternating
-   
-   # initialize variables with intercept values
-   mutate( pred.fiber = ifelse( pat_sex == "Male", as.numeric( df.list[[6]][2,3] ),
-                                ifelse( pat_sex == "Female", as.numeric( df.list[[6]][2,5] ), NA ) ),
-           pred.pcf = ifelse( pat_sex == "Male", as.numeric( df.list[[6]][2,2] ),
-                              ifelse( pat_sex == "Female", as.numeric( df.list[[6]][2,4] ), NA ) ) )
 
- for( i in 1:nrow( d.6 ) ){  # loop on subject
+d.6 <- d.5 %>% # copy data before looping and alternating
+  
+  # initialize variables with intercept values
+  mutate( pred.fiber = ifelse( pat_sex == "Male", as.numeric( df.list[[6]][2,3] ),
+                               ifelse( pat_sex == "Female", as.numeric( df.list[[6]][2,5] ), NA ) ),
+          pred.pcf = ifelse( pat_sex == "Male", as.numeric( df.list[[6]][2,2] ),
+                             ifelse( pat_sex == "Female", as.numeric( df.list[[6]][2,4] ), NA ) ) )
 
-     
+for( i in 1:nrow( d.6 ) ){  # loop on subject
+  
+  
+  
+  for( g in 3:20){ # loop on all food items this time
+    
+    ## males
+    if( d.6[ i, "pat_sex" ] == "Male" ){
+      
+      # predicted fiber
+      d.6[ i, "pred.fiber" ] <-
+        d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
+        as.numeric(df.list[[6]][g,3]) + d.6[ i, "pred.fiber" ]
+      
+      # predicted % from fat
+      d.6[ i, "pred.pcf" ] <-
+        d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
+        as.numeric(df.list[[6]][g,2]) + d.6[ i, "pred.pcf" ]
+    }
+    
+    ## females
+    if( d.6[ i, "pat_sex" ] == "Female" ){
+      
+      # predicted fiber
+      d.6[ i, "pred.fiber" ] <-
+        d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
+        as.numeric(df.list[[6]][g,5]) + d.6[ i, "pred.fiber" ]
+      
+      # predicted % from fat
+      d.6[ i, "pred.pcf" ] <-
+        d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
+        as.numeric(df.list[[6]][g,4]) + d.6[ i, "pred.pcf" ]
+    }
+  }
+}
 
-       for( g in 3:20){ # loop on all food items this time
-         
-         ## males
-         if( d.6[ i, "pat_sex" ] == "Male" ){
-           
-           # predicted fiber
-         d.6[ i, "pred.fiber" ] <-
-           d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
-           as.numeric(df.list[[6]][g,3]) + d.6[ i, "pred.fiber" ]
-         
-         # predicted % from fat
-         d.6[ i, "pred.pcf" ] <-
-           d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
-           as.numeric(df.list[[6]][g,2]) + d.6[ i, "pred.pcf" ]
-         }
-         
-         ## females
-         if( d.6[ i, "pat_sex" ] == "Female" ){
-           
-           # predicted fiber
-           d.6[ i, "pred.fiber" ] <-
-             d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
-             as.numeric(df.list[[6]][g,5]) + d.6[ i, "pred.fiber" ]
-           
-           # predicted % from fat
-           d.6[ i, "pred.pcf" ] <-
-             d.6[ i, which(colnames( d.6 ) == paste0( df.list[[6]]$`Parameter`[g], "_a" ) ) ]*
-             as.numeric(df.list[[6]][g,4]) + d.6[ i, "pred.pcf" ]
-         }
-       }
- }
- 
- # ---------------------------------------------------------------------------------------------------------------------------------------------------------
- 
- 
- 
- 
-### (6.0) Adjustment of Food Items by Age/Gender Factors ###
- ## Creates cup-equivalent pyramid serving units (`raw.pred.fv7.ce`, `raw.pred.fv6.ce`, `pred.fv7.ce`, `pred.fv6.ce`) ##
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
- 
+
+
+
+
+### (6.0) Adjustment of Food Items by Age/Gender Factors ###
+## Creates cup-equivalent pyramid serving units (`raw.pred.fv7.ce`, `raw.pred.fv6.ce`, `pred.fv7.ce`, `pred.fv6.ce`) ##
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
 ## (6.1) Create age category variable
 for ( i in 1:nrow( d.6 ) ){
   
@@ -425,28 +425,28 @@ for ( i in 1:nrow( d.6 ) ){
     
   }
 }
- 
- ## --------- End Subsection --------- ##
- 
+
+## --------- End Subsection --------- ##
+
 
 ## (6.2) Input F/V cup equivalent adjustments, from fran.predict.nhis.fortim.cupeq.txt provided by Lisa Kahle 06/15/2007 ##
 
 fvcupadj <- tibble::tribble(
-     ~"gender", ~"AgeGrp", ~"FVCAFruit", ~"FVCAFrtJ", ~"FVCAFrFry", ~"FVCAOthPot", ~"FVCASalad", ~"FVCAOthVeg", ~"FVCADrBean",
-    1, 1, 0.999580, 1.499160, 0.721125, 1.000400, 0.272700, 0.387675, 0.717550, 
-    1, 2, 0.933450, 1.250580, 0.727700, 1.140030, 0.353970, 0.473920, 0.551540, 
-    1, 3, 0.867300, 1.000980, 0.641000, 0.999600, 0.377235, 0.499840, 0.566720, 
-    1, 4, 0.867300, 1.000980, 0.641000, 0.999600, 0.374963, 0.500240, 0.612360, 
-    1, 5, 0.867300, 1.000176, 0.548055, 0.999490, 0.416640, 0.499905, 0.500250, 
-    1, 6, 0.774916, 0.750735, 0.480750, 0.833175, 0.375000, 0.460585, 0.502285, 
-    1, 7, 0.657060, 0.750735, 0.499980, 0.754400, 0.411323, 0.416899, 0.575360, 
-    2, 1, 0.749235, 1.124370, 0.509595, 0.782020, 0.306788, 0.364468, 0.492150, 
-    2, 2, 0.867300, 1.000960, 0.455110, 0.876945, 0.286335, 0.395882, 0.341550, 
-    2, 3, 0.844838, 1.000176, 0.448700, 0.771260, 0.416625, 0.404303, 0.430530, 
-    2, 4, 0.789970, 0.938130, 0.448700, 0.771260, 0.499950, 0.408330, 0.345763, 
-    2, 5, 0.742350, 0.764776, 0.394856, 0.749700, 0.397688, 0.416913, 0.430685, 
-    2, 6, 0.712640, 0.750728, 0.444260, 0.771260, 0.312469, 0.436560, 0.430530, 
-    2, 7, 0.620475, 0.750434, 0.444260, 0.644235, 0.374963, 0.452214, 0.500400
+  ~"gender", ~"AgeGrp", ~"FVCAFruit", ~"FVCAFrtJ", ~"FVCAFrFry", ~"FVCAOthPot", ~"FVCASalad", ~"FVCAOthVeg", ~"FVCADrBean",
+  1, 1, 0.999580, 1.499160, 0.721125, 1.000400, 0.272700, 0.387675, 0.717550, 
+  1, 2, 0.933450, 1.250580, 0.727700, 1.140030, 0.353970, 0.473920, 0.551540, 
+  1, 3, 0.867300, 1.000980, 0.641000, 0.999600, 0.377235, 0.499840, 0.566720, 
+  1, 4, 0.867300, 1.000980, 0.641000, 0.999600, 0.374963, 0.500240, 0.612360, 
+  1, 5, 0.867300, 1.000176, 0.548055, 0.999490, 0.416640, 0.499905, 0.500250, 
+  1, 6, 0.774916, 0.750735, 0.480750, 0.833175, 0.375000, 0.460585, 0.502285, 
+  1, 7, 0.657060, 0.750735, 0.499980, 0.754400, 0.411323, 0.416899, 0.575360, 
+  2, 1, 0.749235, 1.124370, 0.509595, 0.782020, 0.306788, 0.364468, 0.492150, 
+  2, 2, 0.867300, 1.000960, 0.455110, 0.876945, 0.286335, 0.395882, 0.341550, 
+  2, 3, 0.844838, 1.000176, 0.448700, 0.771260, 0.416625, 0.404303, 0.430530, 
+  2, 4, 0.789970, 0.938130, 0.448700, 0.771260, 0.499950, 0.408330, 0.345763, 
+  2, 5, 0.742350, 0.764776, 0.394856, 0.749700, 0.397688, 0.416913, 0.430685, 
+  2, 6, 0.712640, 0.750728, 0.444260, 0.771260, 0.312469, 0.436560, 0.430530, 
+  2, 7, 0.620475, 0.750434, 0.444260, 0.644235, 0.374963, 0.452214, 0.500400
 ) %>%
   mutate( gender = ifelse( gender == 1, "Male",
                            ifelse( gender == 2, "Female", NA ) ) )
@@ -561,9 +561,9 @@ sum(is.na( d.9$sex_life)) # check how many missing; 97 subjects
 
 # subset the FACT-G questionnaire columns only
 fg.sub <- d.9[, c( fg.swb,
-         fg.ewb,
-         fg.fwb,
-         fg.pwb ) ]
+                   fg.ewb,
+                   fg.fwb,
+                   fg.pwb ) ]
 
 # assign numerical values based on level
 fg.sub[ fg.sub=="Not at all" ] <- 0
@@ -621,9 +621,9 @@ for ( i in 1:nrow( d.10 ) ){
 
 # convert all FACT-G columns to numeric prior to final computations
 these <- which( colnames( d.10 ) %in% c( fg.swb,
-                              fg.ewb,
-                              fg.fwb,
-                              fg.pwb ) )
+                                         fg.ewb,
+                                         fg.fwb,
+                                         fg.pwb ) )
 
 for( i in these ){
   
@@ -634,16 +634,16 @@ for( i in these ){
 # do final computations
 d.11 <- d.10 %>%
   mutate( factg_pwb = ( ( energy + nausea + family_needs + pain + side_effects + ill +
-            bed )*7 ) / answers.pwb,
+                            bed )*7 ) / answers.pwb,
           
           factg_ewb = ( ( sad + satisfied_coping + losing_hope + nervous + 
-            worry_dying + worry_get_worse )*6 ) / answers.ewb,
+                            worry_dying + worry_get_worse )*6 ) / answers.ewb,
           
           factg_swb = ( ( friends + family + friends_support + fami_accept +
-            satisfied_comm + clost_to_partner + sex_life )*7 ) / answers.swb,
+                            satisfied_comm + clost_to_partner + sex_life )*7 ) / answers.swb,
           
           factg_fwb = ( ( work + work_fulfilling + enjoy_life + accepted_illness +
-            sleeping_well + fun + content_qol )*7 ) / answers.fwb,
+                            sleeping_well + fun + content_qol )*7 ) / answers.fwb,
           
           factg_total = factg_ewb + factg_swb + factg_pwb + factg_fwb )
 
@@ -706,10 +706,10 @@ d.13 <- d.12 %>%
   mutate( fi_scale = hfss_1 + hfss_2 + hfss_3 + hfss_4 + hfss_5 +
             hfss_6,
           fi_status = as.factor( ifelse( fi_scale == 0, "High FI",
-                              ifelse( fi_scale == 1, "Marginal FI",
-                                      ifelse( fi_scale %in% 2:4, "Low FI",
-                                              ifelse( fi_scale %in% 5:6, "Very low FI", 
-                                                      NA) ) ) ) ),
+                                         ifelse( fi_scale == 1, "Marginal FI",
+                                                 ifelse( fi_scale %in% 2:4, "Low FI",
+                                                         ifelse( fi_scale %in% 5:6, "Very low FI", 
+                                                                 NA) ) ) ) ),
           fi_binary = as.factor( ifelse( fi_scale %in% 0:1, "High FI",
                                          ifelse( fi_scale %in% 2:6, "Low FI", NA ) ) ) ) 
 
@@ -737,11 +737,11 @@ d.13 <- d.12 %>%
 ## (10.1) Column indicators of variables needed for scale ##
 
 these.chaos <- which( colnames( d.13 ) %in% c( "commotion", "find_things", 
-                                             "rushed", "stay_on_top",
-                                             "running_late", "zoo", "talk_with", 
-                                             "fuss", "does_not_work", "think", 
-                                             "arguments", "relax", "telephone", 
-                                             "calm", "routine" ) )
+                                               "rushed", "stay_on_top",
+                                               "running_late", "zoo", "talk_with", 
+                                               "fuss", "does_not_work", "think", 
+                                               "arguments", "relax", "telephone", 
+                                               "calm", "routine" ) )
 
 ## --------- End Subsection --------- ##
 
@@ -803,7 +803,7 @@ d.15 <- d.14 %>%
 ## (11.1) Column indicators of variables needed for scale ##
 
 these.financial <- which( colnames( d.13 ) %in% c( "review_bills", "bills_on_time",
-                                               "budget", "review_income" ) )
+                                                   "budget", "review_income" ) )
 # NOTE: missing one variable (credit bill pay on time?)
 
 
@@ -863,17 +863,17 @@ d.18 <- d.17 %>%
                                                   ifelse( pat_ethnicity___4 == "Checked", "Other Hispanic origin",
                                                           ifelse( pat_ethnicity___5 == "Checked", "None of these", NA) ) ) ) ),
           pat_race_ethnicity = ifelse( pat_ethnicity %in% c( "Mexican/Mexican-American/Chicano",
-                                                     "Puerto Rican",
-                                                     "Cuban",
-                                                     "Other Hispanic origin" ), "Hispanic",
-                               ifelse( pat_race == "Caucasian or White" & pat_ethnicity %notin% c( "Mexican/Mexican-American/Chicano",
-                                                                                               "Puerto Rican",
-                                                                                               "Cuban",
-                                                                                               "Other Hispanic origin" ), "white",
-                                       ifelse( pat_race == "Black or African-American", "Black or African-American", 
-                                               ifelse( pat_race == "Other", "Other",
-                                                       ifelse( pat_race == "Asian (i.e. original people of the Far East, Southeast Asia, and Indian subcontinent)",
-                                                               "Asian", NA ) ) ) ) ),
+                                                             "Puerto Rican",
+                                                             "Cuban",
+                                                             "Other Hispanic origin" ), "Hispanic",
+                                       ifelse( pat_race == "Caucasian or White" & pat_ethnicity %notin% c( "Mexican/Mexican-American/Chicano",
+                                                                                                           "Puerto Rican",
+                                                                                                           "Cuban",
+                                                                                                           "Other Hispanic origin" ), "white",
+                                               ifelse( pat_race == "Black or African-American", "Black or African-American", 
+                                                       ifelse( pat_race == "Other", "Other",
+                                                               ifelse( pat_race == "Asian (i.e. original people of the Far East, Southeast Asia, and Indian subcontinent)",
+                                                                       "Asian", NA ) ) ) ) ),
           pat_race_ethnicity_b = ifelse( pat_race_ethnicity =="Black or African-American", "Black or African-American",
                                          ifelse( pat_race_ethnicity %in% c( "Hispanic", "Asian" ), "Other",
                                                  ifelse( pat_race_ethnicity == "white", "white", NA ) ) ) )
@@ -885,8 +885,8 @@ d.18 <- d.17 %>%
 
 d.19 <- d.18 %>%
   mutate( year_dos = as.numeric( str_extract( d.16$date, "\\d\\d\\d\\d(?=\\-)" ) ), # year of survey date
-    age_diagnosis = ifelse( age_diagnosis > 1000, age - ( year_dos - age_diagnosis ), age_diagnosis ),
-    yrs_since_dx = age - age_diagnosis ) %>%
+          age_diagnosis = ifelse( age_diagnosis > 1000, age - ( year_dos - age_diagnosis ), age_diagnosis ),
+          yrs_since_dx = age - age_diagnosis ) %>%
   select( -year_dos )
 
 ## --------- End Subsection --------- ##
@@ -916,8 +916,8 @@ d.20 <- d.19 %>%
                                                                        "Never",
                                                                        ifelse( pat_alcohol_drinking == "I currently drink alcohol",
                                                                                "Current", NA ) ) ) ) ) ),
-         
-           # recode smoking status into three categories
+          
+          # recode smoking status into three categories
           pat_smoking_recode = ifelse( pat_smoking_status == "I have smoked in the past but quit over a year ago",
                                        "Former",
                                        ifelse( pat_smoking_status == "I have smoked in the past but quit within the last 1 month",
@@ -930,9 +930,9 @@ d.20 <- d.19 %>%
                                                                        "Never",
                                                                        ifelse( pat_smoking_status == "I currently smoke cigarettes",
                                                                                "Current", NA ) ) ) ) ) ) )
-                                                                               
-                                                                       
-                                                               
+
+
+
 
 sum( table( d.20$pat_smoking_recode) )
 
@@ -1009,33 +1009,72 @@ d.22 <- d.21 %>%
                                   ifelse( eating_poorly == "No", 0, NA ) ),
           weight_amount = ifelse( is.na(weight_amount), 0,
                                   ifelse( weight_amount == "2-13 lb", 1,
-                                    ifelse( weight_amount == "14-23 lb", 2,
-                                            ifelse( weight_amount == "24-33 lb", 3,
-                                                    ifelse( weight_amount == "34 lb or more", 4,
-                                                            ifelse( weight_amount == "Unsure", 5, NA ))))) ),
+                                          ifelse( weight_amount == "14-23 lb", 2,
+                                                  ifelse( weight_amount == "24-33 lb", 3,
+                                                          ifelse( weight_amount == "34 lb or more", 4,
+                                                                  ifelse( weight_amount == "Unsure", 5, NA ))))) ),
           malnutrition_score = lost_weight + eating_poorly + weight_amount,
           malnutrition_index = ifelse( malnutrition_score >= 2, "At Risk",
                                        ifelse( malnutrition_score < 2, "Not at Risk",
-                                       NA ) ) )
+                                               NA ) ) )
 
 ## --------- End Subsection --------- ##
 
 
 ## (15.2) Poverty calculation
 
-# based on https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines 
+# based on https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/prior-hhs-poverty-guidelines-federal-register-references/2019-poverty-guidelines
+# use 2019 thresholds as that was when most of the data were collected
 levs.inc <- levels( factor( d.22$pat_income_new))
+inc.lower<- str_remove_all(levs.inc, ",") %>% str_extract( ., "(?<=\\$).*?(?=\\s)") # extract all digits between "$" and first space after removing ","
+inc.upper<- str_remove_all(levs.inc, ",") %>% str_extract( ., "(?<=\\s\\$).*?$") # extract all digits between "\\s$" and end of string after removing ","
+inc.upper[is.na( inc.upper ) ] <- "200000" # special case is $200,000+ so we will just assign the same 200,000 value to the 6th entry
 
-d.23 <- d.22 %>%
-  mutate( poverty_line = ifelse( number_household == 1 & pat_income_new %in% levs.inc[c(1,2)], 1,
-                                 ifelse( number_household == 2 & pat_income_new %in% levs.inc[c(1,2,4)], 1,
-                                         ifelse( number_household == 3 & pat_income_new %in% levs.inc[c(1,2,4)], 1,
-                                                 ifelse( number_household == 4 & pat_income_new %in% levs.inc[c(1,2,4,5)], 1,
-                                                         ifelse( number_household == 5 & pat_income_new %in% levs.inc[c(1,2,4,5)], 1,
-                                                                 ifelse( number_household == 6 & pat_income_new %in% levs.inc[c(1,2,4,5)], 1,
-                                                                         ifelse( number_household == 7 & pat_income_new %in% levs.inc[c(1,2,4,5)], 1,
-                                                                                 ifelse( number_household == 8 & pat_income_new %in% levs.inc[c(1,2,4,5,7)], 1,
-                                                                                         ifelse( is.na(pat_income_new) | is.na( number_household ), NA, 0 ))))))))))
+# initialize vector of income bracket midpoints
+inc.mid <- vector()
+
+# loop to find the midpoints
+for ( i in 1:length( inc.lower ) ){
+  
+  # find mid point between upper and lower bounds of income for each income bracket
+  inc.mid[i] <- ( as.numeric( inc.upper[i] ) + as.numeric( inc.lower[i] ) ) / 2 
+  
+}
+
+# create a dataframe with the income bracket midpoint data to join to the working data to facilitate calculation of the poverty ratio
+poverty.frame <- data.frame( pat_income_new = levs.inc, 
+            pat_income_midpoint = inc.mid )
+
+# join the income midpoints to the data
+d.23 <- left_join( d.22, poverty.frame )
+
+
+# obtain table of 2019 poverty thresholds for lower 48 states
+url <-  "https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/prior-hhs-poverty-guidelines-federal-register-references/2019-poverty-guidelines"
+
+# webscrape the URL for HTML tables
+df.list <- url %>%
+  read_html() %>%
+  html_nodes( "table" ) %>%
+  html_table( fill = T )
+
+thres.table <- df.list[[1]][-1, ] # the first table is for the contiguous US states
+thres.table$`Poverty guideline` <- str_remove(thres.table$`Poverty guideline`, ",") %>% 
+  str_remove(., "\\$") %>%
+  as.numeric()
+
+thres.table$`Persons in family/household` <- as.integer( thres.table$`Persons in family/household` )
+
+d.24 <- thres.table %>%
+  rename( number_household = `Persons in family/household`) %>%
+  left_join( d.23, ., by = "number_household" ) %>% # join the poverty guidelines to each row of the data based on the number of household occupants specified in that row
+  mutate( income_poverty_ratio = pat_income_midpoint / `Poverty guideline`,
+          inc_pov_binary = ifelse( income_poverty_ratio <= 1.3, "Income <= 130% Poverty Line",
+                                   ifelse( income_poverty_ratio > 1.3, "Income > 130% Poverty Line", NA ))) %>%
+  select( -c( pat_income_midpoint, `Poverty guideline` ) )
+
+
+
 ## --------- End Subsection --------- ##
 
 
@@ -1043,7 +1082,9 @@ d.23 <- d.22 %>%
 
 # malnutrition_index = binary malnutrition index
 # malnutrition_score = malnutrition index score used to create binary indicator
-# poverty_line = poverty status indicator (1 == below poverty line)
+# income_poverty_ratio = income to poverty line ratio
+# inc_pov_binary = income to poverty line binary indicator ( a income_poverty_ratio <= 1.3 indicates living in poverty and > 1.3 indicates not living in poverty)
+
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 saveRDS( d.23, "../02-data-wrangled/01-data-scores.rds" )
