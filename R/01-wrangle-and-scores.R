@@ -1051,6 +1051,7 @@ d.23 <- left_join( d.22, poverty.frame )
 
 # obtain table of 2019 poverty thresholds for lower 48 states
 url <-  "https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/prior-hhs-poverty-guidelines-federal-register-references/2019-poverty-guidelines"
+# (accessed 2/23/2023)
 
 # webscrape the URL for HTML tables
 df.list <- url %>%
@@ -1087,7 +1088,7 @@ d.24 <- thres.table %>%
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-saveRDS( d.23, "../02-data-wrangled/01-data-scores.rds" )
-write.csv( d.23, "../02-data-wrangled/01-data-scores.csv")
+saveRDS( d.24, "../02-data-wrangled/01-data-scores.rds" )
+write.csv( d.24, "../02-data-wrangled/01-data-scores.csv")
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
