@@ -167,3 +167,89 @@ tab1.var.freq<-function(var.name,df,table.var.name,strata.var=NULL,strata.level=
   
 }
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+####################################################################################################
+################################# Results Table (Odds Ratios) ######################################
+####################################################################################################
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+res_or <- function( model.obj, term, stratum, y.var ){
+  
+  ci <- confint( model.obj )
+  ci95 <- exp( ci[ which( str_detect( rownames(ci), term ) ), ] ) %>% round(., 2) # exponetiated 95% CI
+  est <- coefficients( model.obj ) 
+  this.est <- exp( est[which( str_detect( names(est), term ) ) ] ) %>% round(.,2) # odds ratio
+  n.size <- nrow( model.matrix( model.obj ) ) # subset size
+  
+  p.val <- summary(model.obj)$coefficients[, 4 ]
+  this.p <- p.val[which( str_detect( names(p.val), term ) ) ] # p value
+  this.p.round <- this.p   %>% round(.,2)
+  # assemble table
+  this.out <- data.frame( stratum = stratum,
+                          y.var = y.var,
+                          x.var = term,
+                          n = n.size,
+                          estimate = paste0( this.est, " (", ci95[1],"- ", ci95[2],")"),
+                          p = this.p.round ) %>%
+    mutate( p = ifelse( this.p < 0.05 & this.p >= 0.01, paste0( p, "*"),
+                        ifelse( this.p < 0.01, paste0( "< 0.01" ), p ) ) )
+  
+  return( this.out )
+}
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+####################################################################################################
+################################# Results Table (Linear Regr) ######################################
+####################################################################################################
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+res_lr <- function( model.obj, term, stratum, y.var, logistic = F ){
+  # model.obj is a regression object
+  # term = a character string; the name of the variable you want to tabulate the results for
+  # stratum = if your data are a subset, this is a character string that expresses how the stratum should be written in the outputted table
+  # y.var = a character string expressing how the y variable should be written in the outputted table
+  # logistic = control whether the coefficients are exponentiated (in the case of logistic regression to obtain odds ratios) or kept untransformed (in the case of linear regression). the default value is FALSE (for linear regression) but can be set to TRUE for logistic regression
+  
+  
+  # coefficients and ci's
+  est <- summary( model.obj )$coefficients
+  ci <- confint( model.obj )
+  
+  # exponentiate if logistic is selected
+  if( logistic ){
+    est <- exp( est )
+    ci <- exp( ci )
+  }
+  
+  # select term of interest and round
+  ci95 <- ci[ which( str_detect( rownames(ci), term ) ), ] %>% round(., 2) # exponetiated 95% CI
+  this.est <- est[which( str_detect( rownames(est), term ) ) ] %>% round(.,2) # odds ratio
+  n.size <- nrow( model.matrix( model.obj ) ) # subset size
+  
+  # p value for table
+  p.val <- summary(model.obj)$coefficients[, 4 ]
+  this.p <- p.val[which( str_detect( names(p.val), term ) ) ] # p value
+  this.p.round <- this.p   %>% round(.,2)
+  
+  # assemble table
+  this.out <- data.frame( stratum = stratum,
+                          y.var = y.var,
+                          x.var = term,
+                          n = n.size,
+                          estimate = paste0( this.est, " (", ci95[1],"- ", ci95[2],")"),
+                          p = this.p.round ) %>%
+    mutate( p = ifelse( this.p < 0.05 & this.p >= 0.01, paste0( p, "*"),
+                        ifelse( this.p < 0.01, paste0( "< 0.01" ), p ) ) )
+  
+  rownames( this.out ) <- NULL
+  return( this.out )
+}
+
+
