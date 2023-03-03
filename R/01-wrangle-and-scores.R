@@ -1088,7 +1088,36 @@ d.24 <- thres.table %>%
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-saveRDS( d.24, "../02-data-wrangled/01-data-scores.rds" )
-write.csv( d.24, "../02-data-wrangled/01-data-scores.csv")
+
+
+
+### (16.0) Multi-modal Therapy Binary Variable ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# column indices for treatment columns
+tx.cols <- which ( str_detect( colnames( d.24 ), "type_treatment" ) )
+
+# select those columns
+tx.sub <- d.24[, tx.cols]
+
+# convert to 1,0 numeric
+tx.sub[ tx.sub == "Checked" ] <- 1
+tx.sub[ tx.sub == "Unchecked" ] <- 0
+for( i in 1:ncol(tx.sub) ){
+  
+  tx.sub[,i] <- as.numeric( tx.sub[,i] )
+}
+
+no.therap <- rowSums( tx.sub ) # no. of therapies is the rowsum of the subset of columns
+
+# append back to dataframe and create a binary indicator
+d.25 <- cbind( d.24, no.therap ) %>%
+  mutate( multi_modal = ifelse( no.therap > 1, "multimodal",
+                                ifelse( no.therap %in% c(1,0), "single or no tx", NA)))
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+saveRDS( d.25, "../02-data-wrangled/01-data-scores.rds" )
+write.csv( d.25, "../02-data-wrangled/01-data-scores.csv")
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
