@@ -2,7 +2,7 @@
 
 
 library( tidyverse )
-
+library( car ) # to compute variance inflation factor (VIF)
 source( "R/utils.R" )
 
 ### (0.0) Read-in Wrangled Data ###
@@ -19,7 +19,7 @@ d <- readRDS( "../02-data-wrangled/01-data-scores.rds" )
 term <- "fi_binary"
 
 
-f.1 <- mal_nut ~ fi_binary + inc_pov_binary + age + pat_sex + food_assist_yn + snap_yn + factg_fwb
+f.1 <- mal_nut ~ fi_binary + inc_pov_binary + age + pat_sex + food_assist_yn  + factg_fwb 
 
 m1 <- d %>%
   mutate( mal_nut = ifelse( malnutrition_index == "At Risk", 1,
@@ -130,19 +130,37 @@ m2 <- d %>%
     
     glm( f.2, data = ., family = binomial )
   
-  r8<- res_or(model.obj = m8, term = "fi_binary", y.var = "Malnutrition Index",
-              stratum = "Receiving SNAP Benefits")  
-  
-  # create table
-  stratum = "Not Receiving SNAP Benefits"
-  
-
   r8 <- res_or(model.obj = m8, term = "fi_binary", y.var = "Malnutrition Index",
-         stratum = "Not Receiving SNAP Benefits")    
+              stratum = "Not receiving SNAP Benefits" )  
+  
+  
+  # stratify on multimodal/single or no treatment
+  
+  m9 <- d %>%
+    mutate( mal_nut = ifelse( malnutrition_index == "At Risk", 1,
+                              ifelse( malnutrition_index == "Not at Risk", 0, NA ) ) ) %>%
+    filter( multi_modal == "multimodal" ) %>%
+    
+    
+    glm( f.2, data = ., family = binomial )
+  
+  r9 <- res_or(model.obj = m9, term = "fi_binary", y.var = "Malnutrition Index",
+               stratum = "Multimodal Treatment" )  
+  
+  m10 <- d %>%
+    mutate( mal_nut = ifelse( malnutrition_index == "At Risk", 1,
+                              ifelse( malnutrition_index == "Not at Risk", 0, NA ) ) )  %>%
+    filter( multi_modal == "single or no tx" ) %>%
+    
+    
+    glm( f.2, data = ., family = binomial )
+  
+  r10 <- res_or(model.obj = m9, term = "fi_binary", y.var = "Malnutrition Index",
+               stratum = "Single or no Treatment" )  
   
   # combine results for malnutrition index
   
-  malnut.mod <- rbind( r1, r2, r3, r4, r5, r6, r7, r8 )
+  malnut.mod <- rbind( r1, r2, r3, r4, r5, r6, r7, r8, r9, r10 )
     
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
@@ -153,11 +171,11 @@ m2 <- d %>%
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
  # model specifications
-  f.3 <-  fi_binary ~ I(factg_total/sd(d$factg_total,na.rm=T) ) + inc_pov_binary + age + pat_sex + food_assist_yn + snap_yn + malnutrition_index + disease_stage
-  f.4 <-  fi_binary ~ I(factg_ewb/sd(d$factg_ewb,na.rm=T) )  + inc_pov_binary + age + pat_sex + food_assist_yn + snap_yn + malnutrition_index + disease_stage
-  f.5 <-  fi_binary ~ I(factg_pwb/sd(d$factg_pwb,na.rm=T) )  + inc_pov_binary + age + pat_sex + food_assist_yn + snap_yn + malnutrition_index + disease_stage
-  f.6 <-  fi_binary ~ I(factg_fwb/sd(d$factg_fwb,na.rm=T) )  + inc_pov_binary + age + pat_sex + food_assist_yn + snap_yn + malnutrition_index + disease_stage
-  f.7 <-  fi_binary ~ I(factg_swb/sd(d$factg_swb,na.rm=T) )  + inc_pov_binary + age + pat_sex + food_assist_yn + snap_yn + malnutrition_index + disease_stage
+  f.3 <-  fi_binary ~ I(factg_total/sd(d$factg_total,na.rm=T) ) + inc_pov_binary + age + pat_sex + food_assist_yn  + malnutrition_index + disease_stage 
+  f.4 <-  fi_binary ~ I(factg_ewb/sd(d$factg_ewb,na.rm=T) )  + inc_pov_binary + age + pat_sex + food_assist_yn  + malnutrition_index + disease_stage 
+  f.5 <-  fi_binary ~ I(factg_pwb/sd(d$factg_pwb,na.rm=T) )  + inc_pov_binary + age + pat_sex + food_assist_yn  + malnutrition_index + disease_stage 
+  f.6 <-  fi_binary ~ I(factg_fwb/sd(d$factg_fwb,na.rm=T) )  + inc_pov_binary + age + pat_sex + food_assist_yn  + malnutrition_index + disease_stage 
+  f.7 <-  fi_binary ~ I(factg_swb/sd(d$factg_swb,na.rm=T) )  + inc_pov_binary + age + pat_sex + food_assist_yn  + malnutrition_index + disease_stage 
   
   # data to use
   list.sub <- list( d,
@@ -166,10 +184,13 @@ m2 <- d %>%
                     d %>%  mutate( number_household = ifelse( number_household == 0 , 1, number_household ) ) %>% # 2 subjects with 0 replaced to 1
                       filter( number_household < 2  ),
                     d %>%  mutate( number_household = ifelse( number_household == 0 , 1, number_household ) ) %>% # 2 subjects with 0 replaced to 1
-                      filter( number_household >= 2  ) )
+                      filter( number_household >= 2  ),
+                    d %>% filter( multi_modal == "multimodal" ),
+                    d %>% filter( multi_modal == "single or no tx" ) )
   
   table.stratum <- c( "All", "<= 2 yrs Since Dx", "> 2 and < 6 yrs Since Dx ",
-                      "Household Size < 2", "Household Size >= 2" )
+                      "Household Size < 2", "Household Size >= 2",
+                      "Multimodal Treatment", "Single or No Treatment")
   
   # initialize dataframes to store results
   out.total <- data.frame()
@@ -225,10 +246,10 @@ for( i in seq_along( list.sub ) ){
 
   
   out.total <- rbind( out.total, r.total )
-  out.ewb <- rbind( out.ewb, r.total )
-  out.pwb <- rbind( out.pwb, r.total )
-  out.fwb <- rbind( out.fwb, r.total )
-  out.swb <- rbind( out.swb, r.total )
+  out.ewb <- rbind( out.ewb, r.ewb )
+  out.pwb <- rbind( out.pwb, r.pwb )
+  out.fwb <- rbind( out.fwb, r.fwb )
+  out.swb <- rbind( out.swb, r.swb )
   
   }
   
@@ -246,7 +267,7 @@ for( i in seq_along( list.sub ) ){
   # cube since the scores are cube rooted 
   d$pred.fiber.cube <- d$pred.fiber^3
   
-  f.8 <- pred.fiber.cube ~ fi_binary + inc_pov_binary + age + pat_sex + food_assist_yn + snap_yn + malnutrition_index + disease_stage
+  f.8 <- pred.fiber.cube ~ fi_binary + inc_pov_binary + age + pat_sex + food_assist_yn  + malnutrition_index + disease_stage 
   
   
   g1 <- lm( f.8, data = d )  
@@ -276,7 +297,17 @@ for( i in seq_along( list.sub ) ){
   j6 <- res_lr(model.obj = g6, term = "fi_binary", y.var = "Predicted Fiber Intake",
                stratum = "Household Size >= 2" ) 
   
-  fib.mod <- rbind( j1, j2, j3, j4, j5, j6 )
+  g7 <- lm( f.8, data = d %>% 
+              filter( multi_modal == "multimodal"  )  )  
+  j7 <- res_lr(model.obj = g7, term = "fi_binary", y.var = "Predicted Fiber Intake",
+               stratum = "Multimodal Treatment" ) 
+  
+  g8 <- lm( f.8, data = d %>%  
+              filter(  multi_modal == "single or no tx"  )  )  
+  j8 <- res_lr(model.obj = g8, term = "fi_binary", y.var = "Predicted Fiber Intake",
+               stratum = "Single or No Treatment" ) 
+  
+  fib.mod <- rbind( j1, j2, j3, j4, j5, j6, j7, j8 )
   
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
@@ -285,7 +316,7 @@ for( i in seq_along( list.sub ) ){
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
   
-  f.9 <- pred.fv6.ce ~ fi_binary + inc_pov_binary + age + pat_sex + food_assist_yn + snap_yn + malnutrition_index + disease_stage
+  f.9 <- pred.fv6.ce ~ fi_binary + inc_pov_binary + age + pat_sex + food_assist_yn  + malnutrition_index + disease_stage 
   
   
   g1 <- lm( f.9, data = d )  
@@ -315,7 +346,17 @@ for( i in seq_along( list.sub ) ){
   j6 <- res_lr(model.obj = g6, term = "fi_binary", y.var = "Age/Sex-Adjusted F & V Intake (Cups)",
                stratum = "Household Size >= 2" ) 
   
-  fv.mod <- rbind( j1, j2, j3, j4, j5, j6 )
+  g7 <- lm( f.9, data = d %>%  mutate( number_household = ifelse( number_household == 0 , 1, number_household ) ) %>% # 2 subjects with 0 replaced to 1
+              filter( multi_modal == "multimodal"  )  )  
+  j7 <- res_lr(model.obj = g7, term = "fi_binary", y.var = "Predicted Fiber Intake",
+               stratum = "Multimodal Treatment" ) 
+  
+  g8 <- lm( f.9, data = d %>%
+              filter(  multi_modal == "single or no tx"  )  )  
+  j8 <- res_lr(model.obj = g8, term = "fi_binary", y.var = "Predicted Fiber Intake",
+               stratum = "Single or No Treatment" ) 
+  
+  fv.mod <- rbind( j1, j2, j3, j4, j5, j6, j7, j8 )
   
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
@@ -324,7 +365,7 @@ for( i in seq_along( list.sub ) ){
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
   
-  f.10 <- pred.pcf ~ fi_binary + inc_pov_binary + age + pat_sex + food_assist_yn + snap_yn + malnutrition_index + disease_stage
+  f.10 <- pred.pcf ~ fi_binary + inc_pov_binary + age + pat_sex + food_assist_yn  + malnutrition_index + disease_stage 
   
   
   g1 <- lm( f.10, data = d )  
@@ -354,15 +395,27 @@ for( i in seq_along( list.sub ) ){
   j6 <- res_lr(model.obj = g6, term = "fi_binary", y.var = "% KCAL From Fat",
                stratum = "Household Size >= 2" ) 
   
-    fat.mod <- rbind( j1, j2, j3, j4, j5, j6 )
+  g7 <- lm( f.10, data = d %>%  
+              filter( multi_modal == "multimodal"  )  )  
+  j7 <- res_lr(model.obj = g7, term = "fi_binary", y.var = "Predicted Fiber Intake",
+               stratum = "Multimodal Treatment" ) 
+  
+  g8 <- lm( f.10, data = d %>%
+              filter(  multi_modal == "single or no tx"  )  )  
+  j8 <- res_lr(model.obj = g8, term = "fi_binary", y.var = "Predicted Fiber Intake",
+               stratum = "Single or No Treatment" ) 
+  
+    fat.mod <- rbind( j1, j2, j3, j4, j5, j6, j7, j8 )
   
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
   
   
   
-  all.mod <- rbind( malnut.mod, out.factg,
+  diet.and.malnut.mod <- rbind( malnut.mod,
                     fib.mod, fv.mod, fat.mod)
   
-  write.table( all.mod, "../04-tables-figures/03-preliminary-results.txt", sep = "," )
+  write.table( diet.and.malnut.mod, "../04-tables-figures/03-preliminary-results-diet.txt", sep = "," )
+  write.table( diet.and.malnut.mod, "../04-tables-figures/04-preliminary-results-factg.txt", sep = "," )
+  
   

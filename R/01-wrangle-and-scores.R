@@ -35,6 +35,7 @@
 
 library( tidyverse )
 library( rvest )      # for webscraping html tables
+library( lubridate )
 
 source( "R/utils.R")
 
@@ -1094,6 +1095,7 @@ d.24 <- thres.table %>%
 ### (16.0) Multi-modal Therapy Binary Variable ###
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
+## (16.1) create multimodal treatment indicator ##
 # column indices for treatment columns
 tx.cols <- which ( str_detect( colnames( d.24 ), "type_treatment" ) )
 
@@ -1115,9 +1117,51 @@ d.25 <- cbind( d.24, no.therap ) %>%
   mutate( multi_modal = ifelse( no.therap > 1, "multimodal",
                                 ifelse( no.therap %in% c(1,0), "single or no tx", NA)))
 
+## (16.2) New column descriptions ##
+
+# multi_modal = multimodal treatment vs single or no treatment binary indicator
+
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-saveRDS( d.25, "../02-data-wrangled/01-data-scores.rds" )
-write.csv( d.25, "../02-data-wrangled/01-data-scores.csv")
+
+
+
+### (17.0) Pre and Post Covid Binary Indicator  ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## note people who did the new version of the survey have an NA for the date
+# variable. Hwever, they are all post-covid
+
+# convert date column to date format and create binary indicator for
+# pre and post COVID at the time of survey.
+# NOTE: the date of March 13, 2020 will be used as the threshold
+
+## (17.1) create binary variable ##
+d.26 <- d.25 %>%
+  mutate( date = format( date, format = "%Y-%m-%d" ),
+          prepost_covid = ifelse( date < format( "2020-03-13", format = "%Y-%m-%d" ), "pre-covid",
+                                  ifelse( date >= format( "2020-03-13", format = "%Y-%m-%d" ), "post-covid",
+                                          ifelse( consent_version == "v6 10/26/2020", "post-covid", NA ) ) ) )
+
+table( d.26$prepost_covid )
+  
+
+# post-covid  pre-covid 
+# 177         57 
+
+## (17.2) New column descriptions ##
+
+# prepost_covid = multimodal treatment vs single or no treatment binary indicator
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+saveRDS( d.26, "../02-data-wrangled/01-data-scores.rds" )
+write.csv( d.26, "../02-data-wrangled/01-data-scores.csv")
+
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 

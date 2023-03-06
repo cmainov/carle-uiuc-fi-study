@@ -61,13 +61,13 @@ tnames.1 <- c( "Age", "Years Since Cancer Diagnosis", "Household Size", "CHAOS S
 
 
 ## (1.3) Categorical variables that will be used to generate the table and their names
-these.2 <- c( "pat_sex","pat_race_ethnicity_b", "inc_pov_binary",
+these.2 <- c( "pat_sex","pat_race_ethnicity_b", "inc_pov_binary", "prepost_covid",
               "pat_marital_status", "pat_education", "snap_yn", "food_assist_yn",
-              "pat_smoking_recode", "pat_alcohol_recode","tx_type",
+              "pat_smoking_recode", "pat_alcohol_recode","multi_modal",
               "malnutrition_index", "primary_tumor_site", "disease_stage",
               "family_health_insur", "primary_source_coverage" )
 
-tnames.2 <- c( "Sex", "Race/Ethnicity", "Poverty Status", "Marital Status", 
+tnames.2 <- c( "Sex", "Race/Ethnicity", "Poverty Status", "Survey Date", "Marital Status", 
                "Highest Education Level Attained", "Receipt of SNAP Benefits", "Food Bank Utilization",
                "Smoking Status", "Drinking Status", "Treatment Type", 
                "Malnutrition Risk", "Tumor Site", "Stage", "Family Health Insurance Status",
