@@ -155,7 +155,7 @@ m2 <- d %>%
     
     glm( f.2, data = ., family = binomial )
   
-  r10 <- res_or(model.obj = m9, term = "fi_binary", y.var = "Malnutrition Index",
+  r10 <- res_or(model.obj = m10, term = "fi_binary", y.var = "Malnutrition Index",
                stratum = "Single or no Treatment" )  
   
   # combine results for malnutrition index
@@ -348,12 +348,12 @@ for( i in seq_along( list.sub ) ){
   
   g7 <- lm( f.9, data = d %>%  mutate( number_household = ifelse( number_household == 0 , 1, number_household ) ) %>% # 2 subjects with 0 replaced to 1
               filter( multi_modal == "multimodal"  )  )  
-  j7 <- res_lr(model.obj = g7, term = "fi_binary", y.var = "Predicted Fiber Intake",
+  j7 <- res_lr(model.obj = g7, term = "fi_binary", y.var = "Age/Sex-Adjusted F & V Intake (Cups)",
                stratum = "Multimodal Treatment" ) 
   
   g8 <- lm( f.9, data = d %>%
               filter(  multi_modal == "single or no tx"  )  )  
-  j8 <- res_lr(model.obj = g8, term = "fi_binary", y.var = "Predicted Fiber Intake",
+  j8 <- res_lr(model.obj = g8, term = "fi_binary", y.var = "Age/Sex-Adjusted F & V Intake (Cups)",
                stratum = "Single or No Treatment" ) 
   
   fv.mod <- rbind( j1, j2, j3, j4, j5, j6, j7, j8 )
@@ -397,12 +397,12 @@ for( i in seq_along( list.sub ) ){
   
   g7 <- lm( f.10, data = d %>%  
               filter( multi_modal == "multimodal"  )  )  
-  j7 <- res_lr(model.obj = g7, term = "fi_binary", y.var = "Predicted Fiber Intake",
+  j7 <- res_lr(model.obj = g7, term = "fi_binary", y.var = "% KCAL From Fat",
                stratum = "Multimodal Treatment" ) 
   
   g8 <- lm( f.10, data = d %>%
               filter(  multi_modal == "single or no tx"  )  )  
-  j8 <- res_lr(model.obj = g8, term = "fi_binary", y.var = "Predicted Fiber Intake",
+  j8 <- res_lr(model.obj = g8, term = "fi_binary", y.var = "% KCAL From Fat",
                stratum = "Single or No Treatment" ) 
   
     fat.mod <- rbind( j1, j2, j3, j4, j5, j6, j7, j8 )
@@ -416,6 +416,6 @@ for( i in seq_along( list.sub ) ){
                     fib.mod, fv.mod, fat.mod)
   
   write.table( diet.and.malnut.mod, "../04-tables-figures/03-preliminary-results-diet.txt", sep = "," )
-  write.table( diet.and.malnut.mod, "../04-tables-figures/04-preliminary-results-factg.txt", sep = "," )
+  write.table( out.factg, "../04-tables-figures/04-preliminary-results-factg.txt", sep = "," )
   
   
