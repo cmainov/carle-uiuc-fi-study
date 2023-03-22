@@ -168,3 +168,14 @@ mca.tox$eig
 fviz_mca_biplot( mca.tox, 
                  repel = TRUE, # to repel labels close to one another
                  ggtheme = theme_minimal())
+
+
+# get scores
+ind.coords <- get_mca_ind( mca.tox )
+
+ind.coords$coord
+
+# get contributions of each of the variables to the components
+col.contrib <- get_mca_var( mca.tox )
+
+col.contrib$contrib
