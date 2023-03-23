@@ -178,6 +178,10 @@ d.4 <- cbind( d.3,ind.coords$coord[ ,1:3] ) # first three dimensions only
 # get contributions of each of the variables to the components
 col.contrib <- get_mca_var( mca.tox )
 
+# loadings matrix for components 1 and 2
+col.load <- sweep(mca.tox$var$coord,2,sqrt(mca.tox$eig[1:ncol(mca.tox$var$coord),1]),FUN="/")[,1:2]
+# reference: https://stats.stackexchange.com/questions/262703/r-multiple-correspondence-analysis-loadings 
+
 ## --------- End Subsection --------- ##
 
 
@@ -283,7 +287,22 @@ c.3[,5][ is.na( c.3[,5] ) ] <- ""
 
 ## (2.6) Make ordination plot for MCA scores ##
 
-ggplot( data = data.frame( d.4 ), mapping = aes( x = Dim.1, y = Dim.3 ) ) +
+ggplot( data = data.frame( d.4 ) %>% filter( !is.na(fi_binary)), mapping = aes( x = Dim.1, y = Dim.2 ) ) +
   geom_point( aes( col = fi_binary ) ) +
   stat_ellipse( aes( color = fi_binary ) ) +
-  theme_classic()
+  theme_classic() +
+  theme( legend.title = element_blank())
+
+ggsave( "../04-tables-figures/mca-ordination-plot.png" )
+
+## --------- End Subsection --------- ##
+
+
+## (2.7) Save Table ##
+
+# descriptive
+write.table( c.3, "../04-tables-figures/05-table-financial-tox.txt", sep = "," )
+
+# loadings
+write.csv( col.load, "../04-tables-figures/07-mca-loadings.csv" )
+

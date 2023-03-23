@@ -505,7 +505,8 @@ cols.keep <- c( which( colnames( d.7 ) %in% colnames( d.2 ) ), # original data c
 
 
 ## (7.2) Save ##
-( d.8 <- d.7[, cols.keep ] ) 
+( d.8 <- d.7[, cols.keep ] %>%
+    mutate( pred.fiber = pred.fiber^3 ) ) # back-transform predicted fiber back to normal units by cubing 
 
 ## --------- End Subsection --------- ##
 

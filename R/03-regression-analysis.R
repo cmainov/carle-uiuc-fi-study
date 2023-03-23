@@ -263,11 +263,9 @@ for( i in seq_along( list.sub ) ){
   
   ### Fiberrisk models ###
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
   
-  # cube since the scores are cube rooted 
-  d$pred.fiber.cube <- d$pred.fiber^3
-  
-  f.8 <- pred.fiber.cube ~ fi_binary + inc_pov_binary + age + pat_sex + food_assist_yn  + malnutrition_index + disease_stage 
+  f.8 <- pred.fiber ~ fi_binary + inc_pov_binary + age + pat_sex + food_assist_yn  + malnutrition_index + disease_stage 
   
   
   g1 <- lm( f.8, data = d )  
