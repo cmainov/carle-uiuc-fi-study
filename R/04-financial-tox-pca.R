@@ -173,9 +173,114 @@ fviz_mca_biplot( mca.tox,
 # get scores
 ind.coords <- get_mca_ind( mca.tox )
 
-ind.coords$coord
+d.4 <- cbind( d.3,ind.coords$coord[ ,1:2] ) # first two dimensions only
 
 # get contributions of each of the variables to the components
 col.contrib <- get_mca_var( mca.tox )
 
-col.contrib$contrib
+## --------- End Subsection --------- ##
+
+
+## (2.4) Add MCA dimension scores to table ##
+
+these.mca.2 <- c( "Dim.1", "Dim.2" )
+mca.names <- c( "MCA Dimension 1", "MCA Dimension 2" ) 
+
+## for-loop to generate table (continuous variables only)
+# outer loop will loop through the three datasets (to generate three columns) and the inner loop
+# will loop through the variables, which will result in a separate row for each variable in the table
+
+
+d.in <- data.frame()  # initialize data.frame for loop to store rows of the table
+d.in.fs <- data.frame()
+d.in.fi <- data.frame()
+for ( i in 1: length( these.mca ) ) {
+  
+  d.in <- rbind( d.in, tab1.var.mean( var.name = these.mca.2[i],
+                                      df = d.4,
+                                      table.var.name = mca.names[i],
+                                      strata.var = NULL,
+                                      strata.level = NULL,
+                                      round.to = 2 ) ) 
+  
+  # subset on food insecure
+  d.in.fi <- rbind( d.in.fi, tab1.var.mean( var.name = these.mca.2[i],
+                                            df = d.4,
+                                            table.var.name = mca.names[i],
+                                            strata.var = "fi_binary",
+                                            strata.level = "Low FI",
+                                            round.to = 2 ) ) 
+  
+  # subset on food secure
+  d.in.fs <- rbind( d.in.fs, tab1.var.mean( var.name = these.mca.2[i],
+                                            df = d.4,
+                                            table.var.name = mca.names[i],
+                                            strata.var = "fi_binary",
+                                            strata.level = "High FI",
+                                            round.to = 2 ) ) 
+  
+}
+
+
+# merge as rows and reorder rows for final presentation
+c.2 <- cbind( d.in, d.in.fi, d.in.fs ) [, c(1,2,4,6) ] 
+
+
+# row bind with other table of toxicity variables
+c.3 <- rbind( c.1, c.2 )
+
+## (1.6) Wilcoxon Rank Sum and Chi-Square/Fisher's Exact Test p values ##
+
+p.vals <- vector()
+for( i in 1:length( these.mca.2 ) ){
+  
+   d.this <- data.frame( d.4 )
+  ## Wilcoxon Rank Sum test for Categorical variables
+  f1 <- formula( paste0( these.mca.2[i], "~ fi_binary")) # write formula
+  test <-  wilcox.test( f1, data = d.this, alternative = "two.sided" )
+  p.vals[i] <- test$p.value # store p value
+  
+  
+  c.3[ which(c.3$Characteristic == mca.names[i] ), "p" ] <- test$p.value
+}
+
+for (i in 1:length( these.tox ) ){
+  
+  ## Chi-square test of independence for categorical variables
+  two.tab <- table( eval( parse( text = paste0( "d.4$", these.tox[i]) ) ),
+                    d.4$fi_binary)
+  
+  # fisher's exact test if there is at least one cell with a count less than 5
+  if( sum( as.vector( two.tab ) < 5 ) > 0 ){
+    test.cat <- fisher.test( two.tab, simulate.p.value = T )
+  }
+  
+  # chi-square test if there are no cells with less than count of 5
+  if( sum( as.vector( two.tab ) < 5 ) == 0 ){
+    test.cat <- chisq.test( two.tab, simulate.p.value = T )
+  }
+  c.3[ which(c.3$Characteristic == q.names[i] ), "p" ] <- test.cat$p.value
+  
+}
+
+## --------- End Subsection --------- ##
+
+
+## (2.5) Clean up p-values column ##
+
+c.3 <- c.3 %>%
+  mutate( p = ifelse( p < 0.05 & p >= 0.01, paste0( round( p, 2), "*" ),
+                      ifelse( p < 0.01, paste0( "< 0.01**" ), round( p, 2 ))))
+
+
+c.3[,5] <- str_replace( c.3[,5], "(\\d\\.\\d)$", "\\10" ) # match digit, period, digit,end and add a 0 before the end
+c.3[,5] <- str_replace( c.3[,5], "^1$", "0.99" ) # round down probabilities = 1
+
+c.3[,5][ is.na( c.3[,5] ) ] <- ""
+
+## --------- End Subsection --------- ##
+
+
+## (2.6) Make ordination plot for MCA scores ##
+
+
