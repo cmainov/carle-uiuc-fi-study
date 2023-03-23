@@ -173,7 +173,7 @@ fviz_mca_biplot( mca.tox,
 # get scores
 ind.coords <- get_mca_ind( mca.tox )
 
-d.4 <- cbind( d.3,ind.coords$coord[ ,1:2] ) # first two dimensions only
+d.4 <- cbind( d.3,ind.coords$coord[ ,1:3] ) # first three dimensions only
 
 # get contributions of each of the variables to the components
 col.contrib <- get_mca_var( mca.tox )
@@ -183,8 +183,8 @@ col.contrib <- get_mca_var( mca.tox )
 
 ## (2.4) Add MCA dimension scores to table ##
 
-these.mca.2 <- c( "Dim.1", "Dim.2" )
-mca.names <- c( "MCA Dimension 1", "MCA Dimension 2" ) 
+these.mca.2 <- c( "Dim.1", "Dim.2", "Dim.3" )
+mca.names <- c( "MCA Dimension 1", "MCA Dimension 2", "MCA Dimension 3" ) 
 
 ## for-loop to generate table (continuous variables only)
 # outer loop will loop through the three datasets (to generate three columns) and the inner loop
@@ -283,4 +283,7 @@ c.3[,5][ is.na( c.3[,5] ) ] <- ""
 
 ## (2.6) Make ordination plot for MCA scores ##
 
-
+ggplot( data = data.frame( d.4 ), mapping = aes( x = Dim.1, y = Dim.3 ) ) +
+  geom_point( aes( col = fi_binary ) ) +
+  stat_ellipse( aes( color = fi_binary ) ) +
+  theme_classic()
