@@ -87,7 +87,8 @@ trend_func<-function(rank.var,cont.var,df,trend.var,x){
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-tab1.var.mean<-function(var.name,df,table.var.name,strata.var=NULL,strata.level=NULL){
+tab1.var.mean<-function(var.name,df,table.var.name,strata.var=NULL,strata.level=NULL,
+                        round.to = 1){
   
   if(is.null(strata.var)==T){
     df<- data.frame( df )
@@ -98,7 +99,7 @@ tab1.var.mean<-function(var.name,df,table.var.name,strata.var=NULL,strata.level=
   
   
   rowvar.name<-c(table.var.name)
-  rowvar.mean<-c(paste0(round(mean(df[[var.name]],na.rm=T),digits=1),' (',round(sd(df[[var.name]], na.rm = T),digits=1),')'))
+  rowvar.mean<-c(paste0(round(mean(df[[var.name]],na.rm=T),digits=round.to),' (',round(sd(df[[var.name]], na.rm = T),digits=round.to),')'))
   
   partial.table<-data.frame(cbind(rowvar.name,rowvar.mean))
   colnames(partial.table)<-c('Characteristic','Frequency (%) or Mean (SD)')
