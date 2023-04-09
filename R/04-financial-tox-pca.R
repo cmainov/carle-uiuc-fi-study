@@ -39,7 +39,27 @@ d.2 <- d %>%
                                               how_pay_out_of_pocket___5 ),
           how_pay_out_of_pocket___6 = ifelse( how_pay_out_of_pocket___6 == "Checked", 
                                               "Other", 
-                                              how_pay_out_of_pocket___6 ) )
+                                              how_pay_out_of_pocket___6 ),
+          
+          # dichotomize "How much is this due to your cancer?" questions
+          health_insurance_effect = ifelse( health_insurance_effect %in% c( "Quite a bit", "Very much"), "Quite a bit/Very much",
+                                            ifelse( health_insurance_effect %in% c( "A little", "Somewhat","Not at all"), "Little/Somewhat/Not at all",
+                                                    health_insurance_effect ) ),
+          employment_status_effect = ifelse( employment_status_effect %in% c( "Quite a bit", "Very much"), "Quite a bit/Very much",
+                                            ifelse( employment_status_effect %in% c( "A little", "Somewhat","Not at all"), "Little/Somewhat/Not at all",
+                                                    employment_status_effect ) ),
+          financial_status_effect = ifelse( financial_status_effect %in% c( "Quite a bit", "Very much"), "Quite a bit/Very much",
+                                            ifelse( financial_status_effect %in% c( "A little", "Somewhat","Not at all"), "Little/Somewhat/Not at all",
+                                                    financial_status_effect ) ),
+          
+          # re-code pat_treatment into binary, yes/no, variable for treatment status
+          pat_treatment = ifelse( pat_treatment %in% c( "Currently receiving treatment for a cancer",
+                                                        "Receiving treatment for cancer that has returned" ), "Receiving treatment",
+                                  ifelse( pat_treatment %in% c( "I am not receiving treatment" ), "Not receiving treatment",
+                                          pat_treatment ) ) )
+          
+          
+          
 
 ## --------- End Subsection --------- ##
 
@@ -47,7 +67,7 @@ d.2 <- d %>%
 ## (1.2) Select variables and generate table##
 
 # these variables
-these.tox <- c( "worse_insurance", "health_insurance_effect", "worse_employment_status",
+these.tox <- c( "pat_treatment", "worse_insurance", "health_insurance_effect", "worse_employment_status",
              "employment_status_effect", "worse_financial_status", "financial_status_effect",
              "paid_out_of_pocket", "how_pay_out_of_pocket___1", "how_pay_out_of_pocket___2",
              "how_pay_out_of_pocket___3", "how_pay_out_of_pocket___4", "how_pay_out_of_pocket___5", 
@@ -56,7 +76,8 @@ these.tox <- c( "worse_insurance", "health_insurance_effect", "worse_employment_
 # the "If other please specify" open-ended question from this set (variable #162)
 
 # names for presentation in table
-q.names <- c( "Since your cancer diagnosis, are you worse off regarding Health Insurance?",
+q.names <- c( "Treatment Status",
+              "Since your cancer diagnosis, are you worse off regarding Health Insurance?",
               "How much is this due to your cancer diagnosis and treatment?",
               "Since your cancer diagnosis, are you worse off regarding your Employment Status?",
               "How much is this due to your cancer diagnosis and treatment?",
@@ -129,15 +150,15 @@ c.1 <- c.1[ which( !str_detect( c.1[,1], "Selection 3" ) ), ]
 
 ## (2.1) Select variables for MCA ##
 
-# these variables will be used in the MCA
-these.mca <- c( "worse_insurance", "health_insurance_effect", "worse_employment_status",
-                "employment_status_effect", "worse_financial_status", "financial_status_effect",
+# these variables will be used in the MCA (note: branching logic questions were removed given lower response rates to those)
+these.mca <- c( "worse_insurance", "worse_employment_status", "worse_financial_status",
                 "paid_out_of_pocket", "how_pay_out_of_pocket___1", "how_pay_out_of_pocket___2",
                 "how_pay_out_of_pocket___4", "how_pay_out_of_pocket___5", 
                 "how_pay_out_of_pocket___6", "debt_from_treatment",
-                "go_without_meds", "take_less_meds", "miss_dr_appoint" ) # note that we removed
+                "take_less_meds", "miss_dr_appoint", "pat_treatment" ) # note that we removed
 # the "If other please specify" open-ended question from this set (variable #162) AND
 # the how_pay_out_of_pocket___3 variable (see note above) in section 1.3
+# note: we also removed go_without_meds from the MCA list of variables given that only 1 subject responded in the affirmative
 
 # NOTE that variables with names ending in "_effect" having missings that reflect the skip pattern
 
@@ -305,4 +326,158 @@ write.table( c.3, "../04-tables-figures/05-table-financial-tox.txt", sep = "," )
 
 # loadings
 write.csv( col.load, "../04-tables-figures/07-mca-loadings.csv" )
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+### (3.0) Create Table stratified on Treatment Status ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## (3.1) Generate tables ##
+
+# for-loop for categorical variables
+
+d.in.ts <- data.frame()     
+d.in.nt <- data.frame()
+d.in.t <- data.frame()
+for ( i in 1: length( these.tox ) ) {
+  
+  d.in.ts <- rbind( d.in.ts, tab1.var.freq( var.name = these.tox[i],
+                                      df = d.2,
+                                      table.var.name = q.names[i],
+                                      strata.var = NULL,
+                                      strata.level = NULL ) )
+  
+  # subset on food insecure
+  d.in.t <- rbind( d.in.t, tab1.var.freq( var.name = these.tox[i],
+                                            df = d.2,
+                                            table.var.name = q.names[i],
+                                            strata.level = "Receiving treatment",
+                                            strata.var = "pat_treatment" ) )  
+  
+  # subset on food secure
+  d.in.nt <- rbind( d.in.nt, tab1.var.freq( var.name = these.tox[i],
+                                            df = d.2,
+                                            table.var.name = q.names[i],
+                                            strata.level = "Not receiving treatment",
+                                            strata.var = "pat_treatment" ) ) 
+}
+
+## --------- End Subsection --------- ##
+
+
+## (3.2) Clean up tables ##
+
+# merge as rows and reorder rows for final presentation
+t.1 <- cbind( d.in.ts, d.in.t, d.in.nt ) [, c(1,2,4,6) ] 
+
+
+# remove rows that have the "unchecked" response counts
+t.1 <- t.1[ which( !str_detect( t.1[,1], "Unchecked" ) ), ]
+
+# there were no subjects that responded in the affirmative to "borrowing money against my house", so will remove that row from table
+t.1 <- t.1[ which( !str_detect( t.1[,1], "Selection 3" ) ), ]
+
+## --------- End Subsection --------- ##
+
+
+## (3.3) Add MCA dimension scores to table ##
+
+d.in.ts<- data.frame()  # initialize data.frame for loop to store rows of the table
+d.in.t <- data.frame()
+d.in.nt <- data.frame()
+for ( i in 1: length( these.mca ) ) {
+  
+  d.in.ts <- rbind( d.in.ts, tab1.var.mean( var.name = these.mca.2[i],
+                                      df = d.4,
+                                      table.var.name = mca.names[i],
+                                      strata.var = NULL,
+                                      strata.level = NULL,
+                                      round.to = 2 ) ) 
+  
+  # subset on food insecure
+  d.in.t <- rbind( d.in.t, tab1.var.mean( var.name = these.mca.2[i],
+                                            df = d.4,
+                                            table.var.name = mca.names[i],
+                                           strata.level = "Receiving treatment",
+                                           strata.var = "pat_treatment",
+                                            round.to = 2 ) ) 
+  
+  # subset on food secure
+  d.in.nt <- rbind( d.in.nt, tab1.var.mean( var.name = these.mca.2[i],
+                                            df = d.4,
+                                            table.var.name = mca.names[i],
+                                            strata.level = "Not receiving treatment",
+                                            strata.var = "pat_treatment",
+                                            round.to = 2 ) ) 
+  
+}
+
+
+# merge as rows and reorder rows for final presentation
+t.2 <- cbind( d.in.ts, d.in.t, d.in.nt ) [, c(1,2,4,6) ] 
+
+
+# row bind with other table of toxicity variables
+t.3 <- rbind( t.1, t.2 )
+
+## --------- End Subsection --------- ##
+
+
+## (3.4) Wilcoxon Rank Sum and Chi-Square/Fisher's Exact Test p values ##
+
+p.vals <- vector()
+for( i in 1:length( these.mca.2 ) ){
+  
+  d.this <- data.frame( d.4 )
+  ## Wilcoxon Rank Sum test for Categorical variables
+  f1 <- formula( paste0( these.mca.2[i], "~ pat_treatment")) # write formula
+  test <-  wilcox.test( f1, data = d.this, alternative = "two.sided" )
+  p.vals[i] <- test$p.value # store p value
+  
+  
+  t.3[ which(t.3$Characteristic == mca.names[i] ), "p" ] <- test$p.value
+}
+
+for (i in 1:length( these.tox ) ){
+  
+  ## Chi-square test of independence for categorical variables
+  two.tab <- table( eval( parse( text = paste0( "d.4$", these.tox[i]) ) ),
+                    d.4$pat_treatment)
+  
+  # fisher's exact test if there is at least one cell with a count less than 5
+  if( sum( as.vector( two.tab ) < 5 ) > 0 ){
+    test.cat <- fisher.test( two.tab, simulate.p.value = T )
+  }
+  
+  # chi-square test if there are no cells with less than count of 5
+  if( sum( as.vector( two.tab ) < 5 ) == 0 ){
+    test.cat <- chisq.test( two.tab, simulate.p.value = T )
+  }
+  t.3[ which(t.3$Characteristic == q.names[i] ), "p" ] <- test.cat$p.value
+  
+}
+
+## --------- End Subsection --------- ##
+
+
+## (3.5) Clean up p-values column ##
+
+t.3 <- t.3 %>%
+  mutate( p = ifelse( p < 0.05 & p >= 0.01, paste0( round( p, 2), "*" ),
+                      ifelse( p < 0.01, paste0( "< 0.01**" ), round( p, 2 ))))
+
+
+t.3[,5] <- str_replace( t.3[,5], "(\\d\\.\\d)$", "\\10" ) # match digit, period, digit,end and add a 0 before the end
+t.3[,5] <- str_replace( t.3[,5], "^1$", "0.99" ) # round down probabilities = 1
+
+t.3[,5][ is.na( t.3[,5] ) ] <- ""
+
+## --------- End Subsection --------- ##
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
