@@ -332,7 +332,8 @@ write.csv( col.load, "../04-tables-figures/07-mca-loadings.csv" )
 
 
 
-### (3.0) Create Table stratified on Treatment Status ###
+
+### (3.0) Create Table Stratified on Treatment Status ###
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## (3.1) Generate tables ##
@@ -478,6 +479,435 @@ t.3[,5][ is.na( t.3[,5] ) ] <- ""
 ## --------- End Subsection --------- ##
 
 
+## (3.6) Save Table ##
+
+# descriptive
+write.table( t.3, "../04-tables-figures/06-table-financial-tox-treatment.txt", sep = "," )
+
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+### (4.0) Stratify Tables in Section 1.0 by Treatment Status ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+# i.e., this will create two tables
+
+## (4.1) Generate Tables ##
+
+
+# first create two dataset that subset the two categories of treatment status
+d.rec <- d.4 %>% filter( pat_treatment == "Receiving treatment")
+d.nrec <- d.4 %>% filter( pat_treatment == "Not receiving treatment")
+
+# generate empty frame to hold results
+d.in.rec <- data.frame()     
+d.in.rec.fs <- data.frame()
+d.in.rec.fi <- data.frame()
+d.in.nrec <- data.frame()     
+d.in.nrec.fs <- data.frame()
+d.in.nrec.fi <- data.frame()
+for ( i in 1: length( these.tox ) ) {
+  
+  
+  ## receiving treatment ##
+  d.in.rec <- rbind( d.in.rec, tab1.var.freq( var.name = these.tox[i],
+                                      df = d.rec,
+                                      table.var.name = q.names[i],
+                                      strata.var = NULL,
+                                      strata.level = NULL ) )
+  
+  # subset on food insecure
+  d.in.rec.fi <- rbind( d.in.rec.fi, tab1.var.freq( var.name = these.tox[i],
+                                            df = d.rec,
+                                            table.var.name = q.names[i],
+                                            strata.var = "fi_binary",
+                                            strata.level = "Low FI" ) ) 
+  
+  # subset on food secure
+  d.in.rec.fs <- rbind( d.in.rec.fs, tab1.var.freq( var.name = these.tox[i],
+                                            df = d.rec,
+                                            table.var.name = q.names[i],
+                                            strata.var = "fi_binary",
+                                            strata.level = "High FI" ) ) 
+  
+  ## not receiving treatment ##
+  d.in.nrec <- rbind( d.in.nrec, tab1.var.freq( var.name = these.tox[i],
+                                             df = d.nrec,
+                                             table.var.name = q.names[i],
+                                             strata.var = NULL,
+                                             strata.level = NULL ) )
+  
+  # subset on food insecure
+  d.in.nrec.fi <- rbind( d.in.nrec.fi, tab1.var.freq( var.name = these.tox[i],
+                                                   df = d.nrec,
+                                                   table.var.name = q.names[i],
+                                                   strata.var = "fi_binary",
+                                                   strata.level = "Low FI" ) ) 
+  
+  # subset on food secure
+  d.in.nrec.fs <- rbind( d.in.nrec.fs, tab1.var.freq( var.name = these.tox[i],
+                                                   df = d.nrec,
+                                                   table.var.name = q.names[i],
+                                                   strata.var = "fi_binary",
+                                                   strata.level = "High FI" ) ) 
+  
+}
+
+## --------- End Subsection --------- ##
+
+
+## (4.2) Clean up tables ##
+
+# merge as rows and reorder rows for final presentation
+t.rec <- cbind( d.in.rec, d.in.rec.fi, d.in.rec.fs ) [, c(1,2,4,6) ] 
+t.nrec <- cbind( d.in.nrec, d.in.nrec.fi, d.in.nrec.fs ) [, c(1,2,4,6) ] 
+
+
+# remove rows that have the "unchecked" response counts
+t.rec <- t.rec[ which( !str_detect( t.rec[,1], "Unchecked" ) ), ]
+t.nrec <- t.nrec[ which( !str_detect( t.nrec[,1], "Unchecked" ) ), ]
+
+# there were no subjects that responded in the affirmative to "borrowing money against my house", so will remove that row from table
+t.rec <- t.rec[ which( !str_detect( t.rec[,1], "Selection 3" ) ), ]
+t.nrec <- t.nrec[ which( !str_detect( t.nrec[,1], "Selection 3" ) ), ]
+
+## --------- End Subsection --------- ##
+
+
+## (4.3) Add MCA Dimension Scores ##
+
+# generate empty frame to hold results
+d.in.rec <- data.frame()     
+d.in.rec.fs <- data.frame()
+d.in.rec.fi <- data.frame()
+d.in.nrec <- data.frame()     
+d.in.nrec.fs <- data.frame()
+d.in.nrec.fi <- data.frame()
+
+for ( i in 1: length( these.mca ) ) {
+  
+  
+  ## receiving treatment ##
+  d.in.rec <- rbind( d.in.rec, tab1.var.mean( var.name = these.mca.2[i],
+                                      df = d.rec,
+                                      table.var.name = mca.names[i],
+                                      strata.var = NULL,
+                                      strata.level = NULL,
+                                      round.to = 2 ) ) 
+  
+  # subset on food insecure
+  d.in.rec.fi <- rbind( d.in.rec.fi, tab1.var.mean( var.name = these.mca.2[i],
+                                            df = d.rec,
+                                            table.var.name = mca.names[i],
+                                            strata.var = "fi_binary",
+                                            strata.level = "Low FI",
+                                            round.to = 2 ) ) 
+  
+  # subset on food secure
+  d.in.rec.fs <- rbind( d.in.rec.fs, tab1.var.mean( var.name = these.mca.2[i],
+                                            df = d.rec,
+                                            table.var.name = mca.names[i],
+                                            strata.var = "fi_binary",
+                                            strata.level = "High FI",
+                                            round.to = 2 ) ) 
+  
+  
+  ## not receiving treatment ##
+  
+  d.in.nrec <- rbind( d.in.nrec, tab1.var.mean( var.name = these.mca.2[i],
+                                              df = d.nrec,
+                                              table.var.name = mca.names[i],
+                                              strata.var = NULL,
+                                              strata.level = NULL,
+                                              round.to = 2 ) ) 
+  
+  # subset on food insecure
+  d.in.nrec.fi <- rbind( d.in.nrec.fi, tab1.var.mean( var.name = these.mca.2[i],
+                                                    df = d.nrec,
+                                                    table.var.name = mca.names[i],
+                                                    strata.var = "fi_binary",
+                                                    strata.level = "Low FI",
+                                                    round.to = 2 ) ) 
+  
+  # subset on food secure
+  d.in.nrec.fs <- rbind( d.in.nrec.fs, tab1.var.mean( var.name = these.mca.2[i],
+                                                    df = d.nrec,
+                                                    table.var.name = mca.names[i],
+                                                    strata.var = "fi_binary",
+                                                    strata.level = "High FI",
+                                                    round.to = 2 ) ) 
+  
+  
+}
+
+
+# merge as rows and reorder rows for final presentation
+t.rec2 <- cbind( d.in.rec, d.in.rec.fi, d.in.rec.fs ) [, c(1,2,4,6) ] 
+t.nrec2 <- cbind( d.in.nrec, d.in.nrec.fi, d.in.nrec.fs ) [, c(1,2,4,6) ] 
+
+# row bind with other table of toxicity variables
+t.rec3 <- rbind( t.rec, t.rec2 )
+t.nrec3 <- rbind( t.nrec, t.nrec2 )
+
+## --------- End Subsection --------- ##
+
+
+## (4.4) Wilcoxon Rank Sum and Chi-Square/Fisher's Exact Test p values ##
+
+p.vals.rec <- vector()
+p.vals.nrec <- vector()
+for( i in 1:length( these.mca.2 ) ){
+  
+  d.this.rec <- data.frame( d.rec )
+  d.this.nrec <- data.frame( d.rec )
+  ## Wilcoxon Rank Sum test for Categorical variables
+  f1 <- formula( paste0( these.mca.2[i], "~ fi_binary")) # write formula
+  test.rec <-  wilcox.test( f1, data = d.this.rec, alternative = "two.sided" )
+  test.nrec <-  wilcox.test( f1, data = d.this.nrec, alternative = "two.sided" )
+  
+    p.vals.rec[i] <- test.rec$p.value # store p value
+    p.vals.nrec[i] <- test.nrec$p.value # store p value
+    
+  
+  t.rec3[ which(t.rec3$Characteristic == mca.names[i] ), "p" ] <- test.rec$p.value
+  t.nrec3[ which(t.nrec3$Characteristic == mca.names[i] ), "p" ] <- test.nrec$p.value
+  
+  }
+
+for (i in 1:length( these.tox ) ){
+  
+  ## Chi-square test of independence for categorical variables
+  two.tab.rec <- table( eval( parse( text = paste0( "d.rec$", these.tox[i]) ) ),
+                    d.rec$fi_binary)
+  
+  two.tab.nrec <- table( eval( parse( text = paste0( "d.nrec$", these.tox[i]) ) ),
+                        d.nrec$fi_binary)
+  
+  # fisher's exact test if there is at least one cell with a count less than 5
+  if( sum( as.vector( two.tab.rec ) < 5 ) > 0 ){
+    test.cat.rec <- fisher.test( two.tab.rec, simulate.p.value = T )
+  }
+  
+  if( sum( as.vector( two.tab.nrec ) < 5 ) > 0 ){
+    test.cat.nrec <- fisher.test( two.tab.nrec, simulate.p.value = T )
+  }
+  
+  # chi-square test if there are no cells with less than count of 5
+  if( sum( as.vector( two.tab.rec ) < 5 ) == 0 ){
+    test.cat.rec <- chisq.test( two.tab.rec, simulate.p.value = T )
+  }
+  t.rec3[ which(t.rec3$Characteristic == q.names[i] ), "p" ] <- test.cat.rec$p.value
+
+  if( sum( as.vector( two.tab.nrec ) < 5 ) == 0 ){
+    test.cat.nrec <- chisq.test( two.tab.nrec, simulate.p.value = T )
+  }
+  t.nrec3[ which(t.nrec3$Characteristic == q.names[i] ), "p" ] <- test.cat.nrec$p.value
+  
+}
+
+## --------- End Subsection --------- ##
+
+
+## (4.5) Clean up p-values column ##
+
+t.rec3 <- t.rec3 %>%
+  mutate( p = ifelse( p < 0.05 & p >= 0.01, paste0( round( p, 2), "*" ),
+                      ifelse( p < 0.01, paste0( "< 0.01**" ), round( p, 2 ))))
+
+
+t.rec3[,5] <- str_replace( t.rec3[,5], "(\\d\\.\\d)$", "\\10" ) # match digit, period, digit,end and add a 0 before the end
+t.rec3[,5] <- str_replace( t.rec3[,5], "^1$", "0.99" ) # round down probabilities = 1
+
+t.rec3[,5][ is.na( t.rec3[,5] ) ] <- ""
+
+
+t.nrec3 <- t.nrec3 %>%
+  mutate( p = ifelse( p < 0.05 & p >= 0.01, paste0( round( p, 2), "*" ),
+                      ifelse( p < 0.01, paste0( "< 0.01**" ), round( p, 2 ))))
+
+
+t.nrec3[,5] <- str_replace( t.nrec3[,5], "(\\d\\.\\d)$", "\\10" ) # match digit, period, digit,end and add a 0 before the end
+t.nrec3[,5] <- str_replace( t.nrec3[,5], "^1$", "0.99" ) # round down probabilities = 1
+
+t.nrec3[,5][ is.na( t.nrec3[,5] ) ] <- ""
+
+
+## --------- End Subsection --------- ##
+
+
+## (4.6) Save Tables ##
+
+# descriptive
+write.table( t.rec3, "../04-tables-figures/07a-table-financial-tox-fi-treatment.txt", sep = "," )
+
+# descriptive
+write.table( t.nrec3, "../04-tables-figures/07b-table-financial-tox-fi-treatment.txt", sep = "," )
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+### (5.0) Create Table Stratified on Treatment Status ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+## (5.1) Generate tables ##
+
+# create binary variable for the MCA dimension score (Dim 2)
+
+d.score <- d.4 %>%
+  mutate( dim2.binary = as.factor( paste0( quant_cut("Dim 2", 2, df = d.4 ) ) ) )
+
+# for-loop for categorical variables
+
+d.in.score <- data.frame()     
+d.in.low <- data.frame()
+d.in.hi <- data.frame()
+for ( i in 1: length( these.tox ) ) {
+  
+  d.in.score <- rbind( d.in.score, tab1.var.freq( var.name = these.tox[i],
+                                            df = d.score,
+                                            table.var.name = q.names[i],
+                                            strata.var = NULL,
+                                            strata.level = NULL ) )
+  
+  # subset on food insecure
+  d.in.hi <- rbind( d.in.hi, tab1.var.freq( var.name = these.tox[i],
+                                          df = d.score,
+                                          table.var.name = q.names[i],
+                                          strata.level = "2",
+                                          strata.var = "dim2.binary" ) )  
+  
+  # subset on food secure
+  d.in.low <- rbind( d.in.low, tab1.var.freq( var.name = these.tox[i],
+                                            df = d.score,
+                                            table.var.name = q.names[i],
+                                            strata.level = "1",
+                                            strata.var = "dim2.binary" ) ) 
+}
+
+## --------- End Subsection --------- ##
+
+
+## (5.2) Clean up tables ##
+
+# merge as rows and reorder rows for final presentation
+l1 <- cbind( d.in.score, d.in.low, d.in.hi ) [, c(1,2,4,6) ] 
+
+
+# remove rows that have the "unchecked" response counts
+l1 <- l1[ which( !str_detect( l1[,1], "Unchecked" ) ), ]
+
+# there were no subjects that responded in the affirmative to "borrowing money against my house", so will remove that row from table
+l1 <- l1[ which( !str_detect( l1[,1], "Selection 3" ) ), ]
+
+## --------- End Subsection --------- ##
+
+
+## (5.3) Add MCA dimension scores to table ##
+
+d.in.score<- data.frame()  # initialize data.frame for loop to store rows of the table
+d.in.hi <- data.frame()
+d.in.low <- data.frame()
+for ( i in 1: length( these.mca ) ) {
+  
+  d.in.score <- rbind( d.in.score, tab1.var.mean( var.name = these.mca.2[i],
+                                            df = d.score,
+                                            table.var.name = mca.names[i],
+                                            strata.var = NULL,
+                                            strata.level = NULL,
+                                            round.to = 2 ) ) 
+  
+  # subset on food insecure
+  d.in.hi <- rbind( d.in.hi, tab1.var.mean( var.name = these.mca.2[i],
+                                          df = d.score,
+                                          table.var.name = mca.names[i],
+                                          strata.level = "2",
+                                          strata.var = "dim2.binary",
+                                          round.to = 2 ) ) 
+  
+  # subset on food secure
+  d.in.low <- rbind( d.in.low, tab1.var.mean( var.name = these.mca.2[i],
+                                            df = d.score,
+                                            table.var.name = mca.names[i],
+                                            strata.level = "1",
+                                            strata.var = "dim2.binary",
+                                            round.to = 2 ) ) 
+  
+}
+
+
+# merge as rows and reorder rows for final presentation
+l2 <- cbind( d.in.score, d.in.low, d.in.hi ) [, c(1,2,4,6) ] 
+
+
+# row bind with other table of toxicity variables
+l3 <- rbind( l1, l2 )
+
+## --------- End Subsection --------- ##
+
+
+## (5.4) Wilcoxon Rank Sum and Chi-Square/Fisher's Exact Test p values ##
+
+p.vals <- vector()
+for( i in 1:length( these.mca.2 ) ){
+  
+  d.hihis <- data.frame( d.score )
+  ## Wilcoxon Rank Sum test for Categorical variables
+  f1 <- formula( paste0( these.mca.2[i], "~ dim2.binary")) # write formula
+  test <-  wilcox.test( f1, data = d.hihis, alternative = "two.sided" )
+  p.vals[i] <- test$p.value # store p value
+  
+  
+  l3[ which(l3$Characteristic == mca.names[i] ), "p" ] <- test$p.value
+}
+
+for (i in 1:length( these.tox ) ){
+  
+  ## Chi-square test of independence for categorical variables
+  two.hiab <- table( eval( parse( text = paste0( "d.score$", these.tox[i]) ) ),
+                    d.score$dim2.binary)
+  
+  # fisher's exact test if there is at least one cell with a count less than 5
+  if( sum( as.vector( two.hiab ) < 5 ) > 0 ){
+    teslcat <- fisher.test( two.hiab, simulate.p.value = T )
+  }
+  
+  # chi-square test if there are no cells with less than count of 5
+  if( sum( as.vector( two.hiab ) < 5 ) == 0 ){
+    teslcat <- chisq.test( two.hiab, simulate.p.value = T )
+  }
+  l3[ which(l3$Characteristic == q.names[i] ), "p" ] <- teslcat$p.value
+  
+}
+
+## --------- End Subsection --------- ##
+
+
+## (5.5) Clean up p-values column ##
+
+l3 <- l3 %>%
+  mutate( p = ifelse( p < 0.05 & p >= 0.01, paste0( round( p, 2), "*" ),
+                      ifelse( p < 0.01, paste0( "< 0.01**" ), round( p, 2 ))))
+
+
+l3[,5] <- str_replace( l3[,5], "(\\d\\.\\d)$", "\\10" ) # match digit, period, digit,end and add a 0 before the end
+l3[,5] <- str_replace( l3[,5], "^1$", "0.99" ) # round down probabilities = 1
+
+l3[,5][ is.na( l3[,5] ) ] <- ""
+
+## --------- End Subsection --------- ##
+
+
+## (5.6) Save Table ##
+
+# descriptive
+write.table( l3, "../04-tables-figures/08-table-financial-tox-mca-score-hi-lo.txt", sep = "," )
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 
 
