@@ -166,3 +166,6 @@ ggsave( "../04-tables-figures/effect-bar-plots.png",
         width = 7.36,
         height = 10.42 )
 
+
+
+### Correlation Matrix of Dim 2 with other Variables ###

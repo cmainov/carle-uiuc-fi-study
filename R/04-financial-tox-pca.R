@@ -56,7 +56,13 @@ d.2 <- d %>%
           pat_treatment = ifelse( pat_treatment %in% c( "Currently receiving treatment for a cancer",
                                                         "Receiving treatment for cancer that has returned" ), "Receiving treatment",
                                   ifelse( pat_treatment %in% c( "I am not receiving treatment" ), "Not receiving treatment",
-                                          pat_treatment ) ) )
+                                          pat_treatment ) ),
+          
+          # recode out of pocket costs to binary (split at $5000)
+          paid_out_of_pocket_binary = ifelse( paid_out_of_pocket %in% c( "less than $500", "$500 - $2000", "$2001 - 5000" ),
+                                                 "<= $5000",
+                                                ifelse( paid_out_of_pocket %in% c( "$5001 - $10,000", "more than $10,000" ),
+                                                        "> $5000", paid_out_of_pocket ) ) )
           
           
           
@@ -69,7 +75,7 @@ d.2 <- d %>%
 # these variables
 these.tox <- c( "pat_treatment", "worse_insurance", "health_insurance_effect", "worse_employment_status",
              "employment_status_effect", "worse_financial_status", "financial_status_effect",
-             "paid_out_of_pocket", "how_pay_out_of_pocket___1", "how_pay_out_of_pocket___2",
+             "paid_out_of_pocket_binary", "how_pay_out_of_pocket___1", "how_pay_out_of_pocket___2",
              "how_pay_out_of_pocket___3", "how_pay_out_of_pocket___4", "how_pay_out_of_pocket___5", 
              "how_pay_out_of_pocket___6", "debt_from_treatment",
              "go_without_meds", "take_less_meds", "miss_dr_appoint" ) # note that we removed
@@ -114,14 +120,14 @@ for ( i in 1: length( these.tox ) ) {
                                                 df = d.2,
                                                 table.var.name = q.names[i],
                                                 strata.var = "fi_binary",
-                                                strata.level = "Low FI" ) ) 
+                                                strata.level = "Low FS" ) ) 
   
   # subset on food secure
   d.in.fs <- rbind( d.in.fs, tab1.var.freq( var.name = these.tox[i],
                                                 df = d.2,
                                                 table.var.name = q.names[i],
                                                 strata.var = "fi_binary",
-                                                strata.level = "High FI" ) ) 
+                                                strata.level = "High FS" ) ) 
 }
 
 ## --------- End Subsection --------- ##
@@ -152,7 +158,7 @@ c.1 <- c.1[ which( !str_detect( c.1[,1], "Selection 3" ) ), ]
 
 # these variables will be used in the MCA (note: branching logic questions were removed given lower response rates to those)
 these.mca <- c( "worse_insurance", "worse_employment_status", "worse_financial_status",
-                "paid_out_of_pocket", "how_pay_out_of_pocket___1", "how_pay_out_of_pocket___2",
+                "paid_out_of_pocket_binary", "how_pay_out_of_pocket___1", "how_pay_out_of_pocket___2",
                 "how_pay_out_of_pocket___4", "how_pay_out_of_pocket___5", 
                 "how_pay_out_of_pocket___6", "debt_from_treatment",
                 "take_less_meds", "miss_dr_appoint", "pat_treatment" ) # note that we removed
@@ -167,20 +173,14 @@ these.mca <- c( "worse_insurance", "worse_employment_status", "worse_financial_s
 
 ## (2.2) Fix variables that having meaningful skip patterns so they are not missing ##
 
-d.3 <- d.2 %>%
-  mutate( health_insurance_effect = ifelse( !is.na( worse_insurance ) & is.na( health_insurance_effect ),
-                                            "N/A", health_insurance_effect ),
-          employment_status_effect = ifelse( !is.na( worse_employment_status ) & is.na( employment_status_effect ),
-                                            "N/A", employment_status_effect ),
-          financial_status_effect = ifelse( !is.na( worse_financial_status ) & is.na( financial_status_effect ),
-                                             "N/A", financial_status_effect ) )
+# this section was removed
 
 ## --------- End Subsection --------- ##
 
 
 ## (2.3) MCA ##
 
-mca.tox <- FactoMineR::MCA( d.3[ these.mca] )
+mca.tox <- FactoMineR::MCA( d.2[ these.mca] )
 
 # print eigenvalues
 mca.tox$eig
@@ -194,7 +194,7 @@ fviz_mca_biplot( mca.tox,
 # get scores
 ind.coords <- get_mca_ind( mca.tox )
 
-d.4 <- cbind( d.3,ind.coords$coord[ ,1:3] ) # first three dimensions only
+d.4 <- cbind( d.2,ind.coords$coord[ ,1:3] ) # first three dimensions only
 
 # get contributions of each of the variables to the components
 col.contrib <- get_mca_var( mca.tox )
@@ -233,7 +233,7 @@ for ( i in 1: length( these.mca ) ) {
                                             df = d.4,
                                             table.var.name = mca.names[i],
                                             strata.var = "fi_binary",
-                                            strata.level = "Low FI",
+                                            strata.level = "Low FS",
                                             round.to = 2 ) ) 
   
   # subset on food secure
@@ -241,7 +241,7 @@ for ( i in 1: length( these.mca ) ) {
                                             df = d.4,
                                             table.var.name = mca.names[i],
                                             strata.var = "fi_binary",
-                                            strata.level = "High FI",
+                                            strata.level = "High FS",
                                             round.to = 2 ) ) 
   
 }
@@ -521,14 +521,14 @@ for ( i in 1: length( these.tox ) ) {
                                             df = d.rec,
                                             table.var.name = q.names[i],
                                             strata.var = "fi_binary",
-                                            strata.level = "Low FI" ) ) 
+                                            strata.level = "Low FS" ) ) 
   
   # subset on food secure
   d.in.rec.fs <- rbind( d.in.rec.fs, tab1.var.freq( var.name = these.tox[i],
                                             df = d.rec,
                                             table.var.name = q.names[i],
                                             strata.var = "fi_binary",
-                                            strata.level = "High FI" ) ) 
+                                            strata.level = "High FS" ) ) 
   
   ## not receiving treatment ##
   d.in.nrec <- rbind( d.in.nrec, tab1.var.freq( var.name = these.tox[i],
@@ -542,14 +542,14 @@ for ( i in 1: length( these.tox ) ) {
                                                    df = d.nrec,
                                                    table.var.name = q.names[i],
                                                    strata.var = "fi_binary",
-                                                   strata.level = "Low FI" ) ) 
+                                                   strata.level = "Low FS" ) ) 
   
   # subset on food secure
   d.in.nrec.fs <- rbind( d.in.nrec.fs, tab1.var.freq( var.name = these.tox[i],
                                                    df = d.nrec,
                                                    table.var.name = q.names[i],
                                                    strata.var = "fi_binary",
-                                                   strata.level = "High FI" ) ) 
+                                                   strata.level = "High FS" ) ) 
   
 }
 
@@ -600,7 +600,7 @@ for ( i in 1: length( these.mca ) ) {
                                             df = d.rec,
                                             table.var.name = mca.names[i],
                                             strata.var = "fi_binary",
-                                            strata.level = "Low FI",
+                                            strata.level = "Low FS",
                                             round.to = 2 ) ) 
   
   # subset on food secure
@@ -608,7 +608,7 @@ for ( i in 1: length( these.mca ) ) {
                                             df = d.rec,
                                             table.var.name = mca.names[i],
                                             strata.var = "fi_binary",
-                                            strata.level = "High FI",
+                                            strata.level = "High FS",
                                             round.to = 2 ) ) 
   
   
@@ -626,7 +626,7 @@ for ( i in 1: length( these.mca ) ) {
                                                     df = d.nrec,
                                                     table.var.name = mca.names[i],
                                                     strata.var = "fi_binary",
-                                                    strata.level = "Low FI",
+                                                    strata.level = "Low FS",
                                                     round.to = 2 ) ) 
   
   # subset on food secure
@@ -634,7 +634,7 @@ for ( i in 1: length( these.mca ) ) {
                                                     df = d.nrec,
                                                     table.var.name = mca.names[i],
                                                     strata.var = "fi_binary",
-                                                    strata.level = "High FI",
+                                                    strata.level = "High FS",
                                                     round.to = 2 ) ) 
   
   
@@ -909,5 +909,10 @@ write.table( l3, "../04-tables-figures/08-table-financial-tox-mca-score-hi-lo.tx
 
 
 
+### (6.0) Save Data with MCA Scores and Recategorized Variables for Later Use ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
+saveRDS( d.4, "../03-data-rodeo/01-data-mca-recat.rds")
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
