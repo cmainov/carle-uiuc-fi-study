@@ -912,7 +912,13 @@ write.table( l3, "../04-tables-figures/08-table-financial-tox-mca-score-hi-lo.tx
 ### (6.0) Save Data with MCA Scores and Recategorized Variables for Later Use ###
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-saveRDS( d.4, "../03-data-rodeo/01-data-mca-recat.rds")
+# rename MCA dimension variables
+d.4 %>% 
+  rename( mca.dim.1 = `Dim 1`,
+          mca.dim.2 = `Dim 2`,
+          mca.dim.3 = `Dim 3` ) %>%
+  # save
+saveRDS( ., "../03-data-rodeo/01-data-mca-recat.rds")
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 

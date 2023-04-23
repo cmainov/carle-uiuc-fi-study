@@ -5,8 +5,9 @@
 
 library( tidyverse )
 library( ggpubr )
+library( Hmisc )
 
-d <- readRDS( "../02-data-wrangled/01-data-scores.rds" ) %>%
+d <- readRDS( "../03-data-rodeo/01-data-mca-recat.rds" ) %>%
   # recode levels for mark all that apply questions
   mutate( how_pay_out_of_pocket___1 = ifelse( how_pay_out_of_pocket___1 == "Checked", 
                                               "I used my income and/or savings", 
@@ -168,4 +169,33 @@ ggsave( "../04-tables-figures/effect-bar-plots.png",
 
 
 
+
 ### Correlation Matrix of Dim 2 with other Variables ###
+
+# create a matrix of variables to include in the correlation analysis
+d.cor <- d %>%
+  select( mca.dim.2, chaos_score, age,
+          yrs_since_dx, financial_skills_index ) %>%
+  as.matrix()
+
+# generate the table (p-values also printed)
+rcor.obj <- rcorr(as.matrix(d.cor))
+
+# retain the correlations and p-values matrices
+cor.mat <- round( rcor.obj$r, 2 )
+p.mat <- rcor.obj$P
+
+# assign asteriks depending on the p-values matrix
+
+for( i in 1:nrow( cor.mat ) ){
+  
+  for( j in 1:ncol( cor.mat ) ){
+    
+    cor.mat[i,j] <- ifelse( p.mat[i,j] < 0.05, paste0( cor.mat[i,j], "*" ),
+                            cor.mat[i,j] )
+    
+  }
+}
+  
+write.table( cor.mat, "../04-tables-figures/financial-tox-correlation-matrix.txt", sep = "," )
+
