@@ -712,8 +712,8 @@ d.13 <- d.12 %>%
                                                  ifelse( fi_scale %in% 2:4, "Low FI",
                                                          ifelse( fi_scale %in% 5:6, "Very low FI", 
                                                                  NA) ) ) ) ),
-          fi_binary = as.factor( ifelse( fi_scale %in% 0:1, "High FI",
-                                         ifelse( fi_scale %in% 2:6, "Low FI", NA ) ) ) ) 
+          fi_binary = as.factor( ifelse( fi_scale %in% 0:1, "High FS",
+                                         ifelse( fi_scale %in% 2:6, "Low FS", NA ) ) ) ) 
 
 ## --------- End Subsection --------- ##
 
