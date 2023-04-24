@@ -4,48 +4,10 @@
 ######################################################
 
 library( tidyverse )
-library( ggpubr )
-library( Hmisc )
+library( ggpubr ) # for arranging subplots
+library( Hmisc ) # for correlation matrix with p-values
 
-d <- readRDS( "../03-data-rodeo/01-data-mca-recat.rds" ) %>%
-  # recode levels for mark all that apply questions
-  mutate( how_pay_out_of_pocket___1 = ifelse( how_pay_out_of_pocket___1 == "Checked", 
-                                              "I used my income and/or savings", 
-                                              how_pay_out_of_pocket___1 ),
-          how_pay_out_of_pocket___2 = ifelse( how_pay_out_of_pocket___2 == "Checked", 
-                                              "I borrowed money from family or friends", 
-                                              how_pay_out_of_pocket___2 ),
-          how_pay_out_of_pocket___3 = ifelse( how_pay_out_of_pocket___3 == "Checked", 
-                                              "I borrowed money against my house", 
-                                              how_pay_out_of_pocket___3 ),
-          how_pay_out_of_pocket___4 = ifelse( how_pay_out_of_pocket___4 == "Checked", 
-                                              "I left some of my medical bills unpaid", 
-                                              how_pay_out_of_pocket___4 ),
-          how_pay_out_of_pocket___5 = ifelse( how_pay_out_of_pocket___5 == "Checked", 
-                                              "I increased my credit card debt", 
-                                              how_pay_out_of_pocket___5 ),
-          how_pay_out_of_pocket___6 = ifelse( how_pay_out_of_pocket___6 == "Checked", 
-                                              "Other", 
-                                              how_pay_out_of_pocket___6 ),
-          
-          # dichotomize "How much is this due to your cancer?" questions
-          health_insurance_effect = ifelse( health_insurance_effect %in% c( "Quite a bit", "Very much"), "Quite a bit/Very much",
-                                            ifelse( health_insurance_effect %in% c( "A little", "Somewhat","Not at all"), "Little/Somewhat/Not at all",
-                                                    health_insurance_effect ) ),
-          employment_status_effect = ifelse( employment_status_effect %in% c( "Quite a bit", "Very much"), "Quite a bit/Very much",
-                                             ifelse( employment_status_effect %in% c( "A little", "Somewhat","Not at all"), "Little/Somewhat/Not at all",
-                                                     employment_status_effect ) ),
-          financial_status_effect = ifelse( financial_status_effect %in% c( "Quite a bit", "Very much"), "Quite a bit/Very much",
-                                            ifelse( financial_status_effect %in% c( "A little", "Somewhat","Not at all"), "Little/Somewhat/Not at all",
-                                                    financial_status_effect ) ),
-          
-          # re-code pat_treatment into binary, yes/no, variable for treatment status
-          pat_treatment = ifelse( pat_treatment %in% c( "Currently receiving treatment for a cancer",
-                                                        "Receiving treatment for cancer that has returned" ), "Receiving treatment",
-                                  ifelse( pat_treatment %in% c( "I am not receiving treatment" ), "Not receiving treatment",
-                                          pat_treatment ) ) )
-
-
+d <- readRDS( "../03-data-rodeo/01-data-mca-recat.rds" )
 
 
 ### Bar Plot for Worse Financial Effect ###

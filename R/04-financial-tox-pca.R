@@ -319,7 +319,42 @@ ggsave( "../04-tables-figures/mca-ordination-plot.png" )
 ## --------- End Subsection --------- ##
 
 
-## (2.7) Save Table ##
+## (2.8) Mean Time Since Dx row in table ##
+fi.levs <- c( "", "Low FS","High FS" )
+
+age.fr <- data.frame(NA)
+for( i in seq_along( fi.levs ) ){
+  
+  if (i == 1){
+  age.fr <- cbind( age.fr, tab1.var.mean( var.name = "yrs_since_dx",
+               df = d.4,
+               table.var.name = "Years Since Diagnosis",
+               strata.var = NULL,
+               strata.level = NULL ) )
+  }
+  
+  if (i != 1){
+    age.fr <- cbind( age.fr, tab1.var.mean( var.name = "yrs_since_dx",
+                                            df = d.4,
+                                            table.var.name = "Years Since Diagnosis",
+                                            strata.var = "fi_binary",
+                                            strata.level = fi.levs[i] ) )
+  }
+}
+
+# wilcoxon test
+f.fi <- formula( paste0( "yrs_since_dx", "~ fi_binary")) # write formula
+test <-  wilcox.test( f.fi, data = d.4, alternative = "two.sided" )
+age.fr <- cbind( age.fr, round( test$p.value, 2) ) # store p value
+age.fr <- setNames(  age.fr[,c(2,3,5,7,8)],names( c.3 ) )
+# add to table
+
+c.3 <- rbind( age.fr, c.3 )
+
+## --------- End Subsection --------- ##
+
+
+## (2.9) Save Table ##
 
 # descriptive
 write.table( c.3, "../04-tables-figures/05-table-financial-tox.txt", sep = "," )
@@ -479,7 +514,42 @@ t.3[,5][ is.na( t.3[,5] ) ] <- ""
 ## --------- End Subsection --------- ##
 
 
-## (3.6) Save Table ##
+## (3.6) Mean Time Since Dx row in table ##
+pat.levs <- c( "", "Receiving treatment","Not receiving treatment" )
+
+age.fr <- data.frame(NA)
+for( i in seq_along( fi.levs ) ){
+  
+  if (i == 1){
+    age.fr <- cbind( age.fr, tab1.var.mean( var.name = "yrs_since_dx",
+                                            df = d.4,
+                                            table.var.name = "Years Since Diagnosis",
+                                            strata.var = NULL,
+                                            strata.level = NULL ) )
+  }
+  
+  if (i != 1){
+    age.fr <- cbind( age.fr, tab1.var.mean( var.name = "yrs_since_dx",
+                                            df = d.4,
+                                            table.var.name = "Years Since Diagnosis",
+                                            strata.var = "pat_treatment",
+                                            strata.level = pat.levs[i] ) )
+  }
+}
+
+# wilcoxon test
+f.pat <- formula( paste0( "yrs_since_dx", "~ pat_treatment")) # write formula
+test <-  wilcox.test( f.pat, data = d.4, alternative = "two.sided" )
+age.fr <- cbind( age.fr, round( test$p.value, 2) ) # store p value
+age.fr <- setNames(  age.fr[,c(2,3,5,7,8)],names( t.3 ) )
+# add to table
+
+t.3 <- rbind( age.fr, t.3 )
+
+## --------- End Subsection --------- ##
+
+
+## (3.7) Save Table ##
 
 # descriptive
 write.table( t.3, "../04-tables-figures/06-table-financial-tox-treatment.txt", sep = "," )
@@ -659,7 +729,7 @@ p.vals.nrec <- vector()
 for( i in 1:length( these.mca.2 ) ){
   
   d.this.rec <- data.frame( d.rec )
-  d.this.nrec <- data.frame( d.rec )
+  d.this.nrec <- data.frame( d.nrec )
   ## Wilcoxon Rank Sum test for Categorical variables
   f1 <- formula( paste0( these.mca.2[i], "~ fi_binary")) # write formula
   test.rec <-  wilcox.test( f1, data = d.this.rec, alternative = "two.sided" )
@@ -735,7 +805,78 @@ t.nrec3[,5][ is.na( t.nrec3[,5] ) ] <- ""
 ## --------- End Subsection --------- ##
 
 
-## (4.6) Save Tables ##
+## (4.6) Mean Time Since Dx row in table (rec) ##
+
+fi.levs <- c( "", "Low FS","High FS" )
+
+age.fr <- data.frame(NA)
+for( i in seq_along( fi.levs ) ){
+  
+  if (i == 1){
+    age.fr <- cbind( age.fr, tab1.var.mean( var.name = "yrs_since_dx",
+                                            df = d.this.rec,
+                                            table.var.name = "Years Since Diagnosis",
+                                            strata.var = NULL,
+                                            strata.level = NULL ) )
+  }
+  
+  if (i != 1){
+    age.fr <- cbind( age.fr, tab1.var.mean( var.name = "yrs_since_dx",
+                                            df = d.this.rec,
+                                            table.var.name = "Years Since Diagnosis",
+                                            strata.var = "fi_binary",
+                                            strata.level = fi.levs[i] ) )
+  }
+}
+
+# wilcoxon test
+f.fi <- formula( paste0( "yrs_since_dx", "~ fi_binary")) # write formula
+test <-  wilcox.test( f.fi, data = d.this.rec, alternative = "two.sided" )
+age.fr <- cbind( age.fr, round( test$p.value, 2) ) # store p value
+age.fr <- setNames(  age.fr[,c(2,3,5,7,8)],names( t.rec3 ) )
+# add to table
+
+t.rec3 <- rbind( age.fr, t.rec3 )
+
+## --------- End Subsection --------- ##
+
+
+## (4.7) Mean Time Since Dx row in table (nrec) ##
+fi.levs <- c( "", "Low FS","High FS" )
+
+age.fr <- data.frame(NA)
+for( i in seq_along( fi.levs ) ){
+  
+  if (i == 1){
+    age.fr <- cbind( age.fr, tab1.var.mean( var.name = "yrs_since_dx",
+                                            df = d.this.nrec,
+                                            table.var.name = "Years Since Diagnosis",
+                                            strata.var = NULL,
+                                            strata.level = NULL ) )
+  }
+  
+  if (i != 1){
+    age.fr <- cbind( age.fr, tab1.var.mean( var.name = "yrs_since_dx",
+                                            df = d.this.nrec,
+                                            table.var.name = "Years Since Diagnosis",
+                                            strata.var = "fi_binary",
+                                            strata.level = fi.levs[i] ) )
+  }
+}
+
+# wilcoxon test
+f.fi <- formula( paste0( "yrs_since_dx", "~ fi_binary")) # write formula
+test <-  wilcox.test( f.fi, data = d.this.nrec, alternative = "two.sided" )
+age.fr <- cbind( age.fr, round( test$p.value, 2) ) # store p value
+age.fr <- setNames(  age.fr[,c(2,3,5,7,8)],names( t.nrec3 ) )
+# add to table
+
+t.nrec3 <- rbind( age.fr, t.nrec3 )
+
+## --------- End Subsection --------- ##
+
+
+## (4.8) Save Tables ##
 
 # descriptive
 write.table( t.rec3, "../04-tables-figures/07a-table-financial-tox-fi-treatment.txt", sep = "," )
@@ -748,7 +889,7 @@ write.table( t.nrec3, "../04-tables-figures/07b-table-financial-tox-fi-treatment
 
 
 
-### (5.0) Create Table Stratified on Treatment Status ###
+### (5.0) Create Table Stratified on DIM 2 Score ( Hi-lo) ###
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -899,6 +1040,39 @@ l3[,5][ is.na( l3[,5] ) ] <- ""
 
 ## --------- End Subsection --------- ##
 
+## (2.8) Mean Time Since Dx row in table ##
+pat.levs <- c( "", "1","2" )
+
+age.fr <- data.frame(NA)
+for( i in seq_along( fi.levs ) ){
+  
+  if (i == 1){
+    age.fr <- cbind( age.fr, tab1.var.mean( var.name = "yrs_since_dx",
+                                            df = d.score,
+                                            table.var.name = "Years Since Diagnosis",
+                                            strata.var = NULL,
+                                            strata.level = NULL ) )
+  }
+  
+  if (i != 1){
+    age.fr <- cbind( age.fr, tab1.var.mean( var.name = "yrs_since_dx",
+                                            df = d.score,
+                                            table.var.name = "Years Since Diagnosis",
+                                            strata.var = "dim2.binary",
+                                            strata.level = pat.levs[i] ) )
+  }
+}
+
+# wilcoxon test
+f.pat <- formula( paste0( "yrs_since_dx", "~ dim2.binary")) # write formula
+test <-  wilcox.test( f.pat, data = d.score, alternative = "two.sided" )
+age.fr <- cbind( age.fr, round( test$p.value, 2) ) # store p value
+age.fr <- setNames(  age.fr[,c(2,3,5,7,8)],names( l3 ) )
+# add to table
+
+l3 <- rbind( age.fr, l3 )
+
+## --------- End Subsection --------- ##
 
 ## (5.6) Save Table ##
 
