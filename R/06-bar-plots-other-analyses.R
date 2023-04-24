@@ -10,6 +10,133 @@ library( Hmisc ) # for correlation matrix with p-values
 d <- readRDS( "../03-data-rodeo/01-data-mca-recat.rds" )
 
 
+### Worse Status Questions ###
+
+### Bar Plot for Worse Financial Effect ###
+
+# get p-value for plot
+t.fin.s <- table( d$worse_financial_status, d$fi_binary )
+p.fin.s <- round( chisq.test( t.fin.s, simulate.p.value = T )$p.value, 2 )
+p.fin.s <- ifelse( p.fin.s == 1, "0.99", p.fin.s ) # to avoid 1's
+p.fin.s <- ifelse( p.fin.s == 0, "'< 0.01'", p.fin.s ) # to avoid 1's
+p.fin.s <- str_replace( p.fin.s, "(\\.\\d)$", "\\10" ) # for significant digits
+
+# generate plot
+fin.s.plot <- d %>%
+  filter( !is.na( worse_financial_status ) & !is.na( fi_binary ) ) %>%
+  ggplot() +
+  geom_bar( aes( fi_binary, fill = factor( worse_financial_status ) ),
+            width = 0.35 ) +
+  scale_fill_manual( values = c( "#F0E442", "#0072B2" ), # set manual colors
+                     breaks = c( "No",
+                                 "Yes" ) ) +
+  theme_classic() +
+  theme( text = element_text( family = "Avenir" ),
+         legend.position = c( 0.8, 0.8 ),
+         legend.title = element_blank(),
+         axis.title.x = element_blank(),
+         axis.text.x = element_text( size = 12, face = "bold" ),
+         axis.title.y = element_text( size = 12, face = "bold" ),
+         plot.title = element_text( face = "italic" ) ) +
+  ylab( "Frequency" ) + 
+  annotate("text", x = 2.2, y = 100, 
+           label = paste0( "italic(p) ==", p.fin.s ), # add annotated p-value with only p italicized
+           parse = T,
+           family = "Avenir",
+           size = 5 ) +
+  ggtitle( "Worse Financial Status Since Cancer Diagnosis" )
+
+
+
+### Bar Plot for Worse Health Insurance Effect ###
+
+# get p-value for plot
+t.hi.s <- table( d$worse_insurance, d$fi_binary )
+p.hi.s <- round( chisq.test( t.hi.s, simulate.p.value = T )$p.value, 2 )
+p.hi.s <- ifelse( p.hi.s == 1, "0.99", p.hi.s ) # to avoid 1's
+p.hi.s <- ifelse( p.hi.s == 0, "'< 0.01'", p.hi.s ) # to avoid 1's
+p.hi.s <- str_replace( p.hi.s, "(\\.\\d)$", "\\10" ) # for significant digits
+
+# generate plot
+hi.s.plot <- d %>%
+  filter( !is.na( worse_insurance ) & !is.na( fi_binary ) ) %>%
+  ggplot() +
+  geom_bar( aes( fi_binary, fill = factor( worse_insurance ) ),
+            width = 0.35 ) +
+  scale_fill_manual( values = c( "#F0E442", "#0072B2" ), # set manual colors
+                     breaks = c( "No",
+                                 "Yes" ) ) +
+  theme_classic() +
+  theme( text = element_text( family = "Avenir" ),
+         legend.position = c( 0.8, 0.8 ),
+         legend.title = element_blank(),
+         axis.title.x = element_blank(),
+         axis.text.x = element_text( size = 12, face = "bold" ),
+         axis.title.y = element_text( size = 12, face = "bold" ),
+         plot.title = element_text( face = "italic" ) ) +
+  ylab( "Frequency" ) + 
+  annotate("text", x = 2.2, y = 100, 
+           label = paste0( "italic(p) ==", p.hi.s ), # add annotated p-value with only p italicized
+           parse = T,
+           family = "Avenir",
+           size = 5 ) +
+  ggtitle( "Worse Insurance Status Since Cancer Diagnosis" )
+
+
+### Bar Plot for Worse Employment Effect ###
+
+# get p-value for plot
+t.emp.s <- table( d$worse_employment_status, d$fi_binary )
+p.emp.s <- round( chisq.test( t.emp.s, simulate.p.value = T )$p.value, 2 )
+p.emp.s <- ifelse( p.emp.s == 1, "0.99", p.emp.s ) # to avoid 1's
+p.emp.s <- ifelse( p.emp.s == 0, "'< 0.01'", p.emp.s ) # to avoid 1's
+p.emp.s <- str_replace( p.emp.s, "(\\.\\d)$", "\\10" ) # for significant digits
+
+# generate plot
+emp.s.plot <- d %>%
+  filter( !is.na( worse_employment_status ) & !is.na( fi_binary ) ) %>%
+  ggplot() +
+  geom_bar( aes( fi_binary, fill = factor( worse_employment_status ) ),
+            width = 0.35 ) +
+  scale_fill_manual( values = c( "#F0E442", "#0072B2" ), # set manual colors
+                     breaks = c( "No",
+                                 "Yes" ) ) +
+  theme_classic() +
+  theme( text = element_text( family = "Avenir" ),
+         legend.position = c( 0.8, 0.8 ),
+         legend.title = element_blank(),
+         axis.title.x = element_blank(),
+         axis.text.x = element_text( size = 12, face = "bold" ),
+         axis.title.y = element_text( size = 12, face = "bold" ),
+         plot.title = element_text( face = "italic" ) ) +
+  ylab( "Frequency" ) + 
+  annotate("text", x = 2.2, y = 100, 
+           label = paste0( "italic(p) ==", p.emp.s ), # add annotated p-value with only p italicized
+           parse = T,
+           family = "Avenir",
+           size = 5 ) +
+  ggtitle( "Worse Employment Status Since Cancer Diagnosis" )
+
+### Arrange into Single Plot ###
+
+worse.plot <- ggarrange( hi.s.plot, 
+           emp.s.plot + theme( legend.position = "none",
+                             legend.text = element_text( size = 19 )), 
+           fin.s.plot + theme( legend.position = "none"), 
+           labels = list( "A", "", ""),
+           nrow = 3, ncol = 1 )
+
+ggsave( "../04-tables-figures/worse-bar-plots.png",
+        width = 7.36,
+        height = 10.42 )
+
+
+
+
+
+
+
+### Effect Questions ###
 ### Bar Plot for Worse Financial Effect ###
 
 # get p-value for plot
@@ -118,16 +245,25 @@ emp.plot <- d %>%
 
 ### Arrange into Single Plot ###
 
-ggarrange( hi.plot, 
+effect.plot <- ggarrange( hi.plot, 
            emp.plot + theme( legend.position = "none",
                              legend.text = element_text( size = 19 )), 
            fin.plot + theme( legend.position = "none"), 
-           labels = list( "A", "B", "C"),
+           labels = list( "B", "", ""),
            nrow = 3, ncol = 1 )
 
 ggsave( "../04-tables-figures/effect-bar-plots.png",
         width = 7.36,
         height = 10.42 )
+
+
+### Now Arrange Effect and Worse Plots into Single Plot ###
+all.plot <- ggarrange( worse.plot, effect.plot, nrow = 1, ncol = 2)
+
+
+ggsave( "../04-tables-figures/worse-effect-bar-plots.png",
+        width = 9.72,
+        height = 14.84 )
 
 
 
@@ -136,8 +272,10 @@ ggsave( "../04-tables-figures/effect-bar-plots.png",
 
 # create a matrix of variables to include in the correlation analysis
 d.cor <- d %>%
+  filter( number_household >= 2 ) %>% #filter by no. in household given potential issues with CHAOS score
   select( mca.dim.2, chaos_score, age,
-          yrs_since_dx, financial_skills_index ) %>%
+          yrs_since_dx, financial_skills_index,factg_total,
+          factg_pwb, factg_ewb, factg_fwb, factg_swb ) %>%
   as.matrix()
 
 # generate the table (p-values also printed)
