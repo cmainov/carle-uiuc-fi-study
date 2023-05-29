@@ -193,7 +193,7 @@ res_or <- function( model.obj, term, stratum, y.var ){
                           y.var = y.var,
                           x.var = term,
                           n = n.size,
-                          estimate = paste0( this.est, " (", ci95[1],"- ", ci95[2],")"),
+                          estimate = paste0( this.est, " (", ci95[1]," - ", ci95[2],")"),
                           p = this.p.round ) %>%
     mutate( p = ifelse( this.p < 0.05 & this.p >= 0.01, paste0( p, "*"),
                         ifelse( this.p < 0.01, paste0( "< 0.01" ), p ) ) )

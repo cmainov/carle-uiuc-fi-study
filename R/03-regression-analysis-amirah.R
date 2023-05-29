@@ -1,8 +1,33 @@
+##-----------------------------------------------------
+###   03-REGRESSION ANALYSIS-AMIRAH'S DISSERTATION
+###----------------------------------------------------
 
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+# 
+# In this script, we fit regression (logistic and linear regression) models
+# that assess  one of the specific aims of Amirah's analysis for her dissertation.
+# We evaluate the relationship between dietary scores from the NCI multifactor screener
+# and food insecurity and also examine the relationship between QOL (from the FACTG survey)
+# and food insecurity. All models adjust for relevant covariates.
+#
+# INPUT DATA FILES: 
+# i. "../02-data-wrangled/01-data-scores.rds"
+#
+#
+# OUTPUT FILES: 
+# i. "../04-tables-figures/03-preliminary-results-diet.txt"
+# ii "../04-tables-figures/04-preliminary-results-factg.txt"
+#
+# **A Special Note**: The data and tables are not being hosted on this GitHub repository given privacy concerns
+# Relative paths are used for obtaining the data from a local folder on my machine.
+#
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 library( tidyverse )
 library( car ) # to compute variance inflation factor (VIF)
+
+# load in helper functions
 source( "R/utils.R" )
 
 ### (0.0) Read-in Wrangled Data ###
@@ -12,7 +37,10 @@ d <- readRDS( "../02-data-wrangled/01-data-scores.rds" )
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-### malnutrition risk models ###
+
+
+
+### (1.0) Malnutrition Risk Models ###
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -167,7 +195,7 @@ m2 <- d %>%
   
   
   
-  ### FACT-G risk models ###
+  ### (2.0) FACT-G Risk Models ###
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
  # model specifications
@@ -261,7 +289,7 @@ for( i in seq_along( list.sub ) ){
   
   
   
-  ### Fiberrisk models ###
+  ### (3.0) Fiber Risk Models ###
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
   
@@ -310,7 +338,7 @@ for( i in seq_along( list.sub ) ){
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
   
-  ### Fruit and Veg models ###
+  ### (4.0) Fruit and Veg Models ###
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
   
@@ -359,7 +387,7 @@ for( i in seq_along( list.sub ) ){
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
   
-  ### % from Fat  models ###
+  ### (5.0) % from Fat Models ###
   # ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
   
@@ -405,15 +433,19 @@ for( i in seq_along( list.sub ) ){
   
     fat.mod <- rbind( j1, j2, j3, j4, j5, j6, j7, j8 )
   
-  # ---------------------------------------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
   
-  
-  
+    
+    
+### (6.0) Save Results ###
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
   diet.and.malnut.mod <- rbind( malnut.mod,
                     fib.mod, fv.mod, fat.mod)
   
   write.table( diet.and.malnut.mod, "../04-tables-figures/03-preliminary-results-diet.txt", sep = "," )
   write.table( out.factg, "../04-tables-figures/04-preliminary-results-factg.txt", sep = "," )
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------
   
   
